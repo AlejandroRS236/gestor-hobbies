@@ -1,4 +1,6 @@
-import type { EstadoFigura, Figura, FiguraPeticion, ResultadoImportacion, Tienda } from './tipos';
+import type {
+  DecisionMfc, EstadoFigura, Figura, FiguraPeticion, PrevisualizacionMfc, ResultadoImportacion, Tienda,
+} from './tipos';
 
 async function pedir<T>(ruta: string, opciones: RequestInit = {}): Promise<T> {
   const esFormulario = opciones.body instanceof FormData;
@@ -50,10 +52,22 @@ export function eliminarTienda(id: number): Promise<void> {
   return pedir<void>(`/api/tiendas/${id}`, { method: 'DELETE' });
 }
 
-/** Importa un Excel de figuras o una página de colección de MyFigureCollection guardada (.html). */
-export function importarArchivo(archivo: File): Promise<ResultadoImportacion> {
+export function importarExcel(archivo: File): Promise<ResultadoImportacion> {
   const datos = new FormData();
   datos.append('archivo', archivo);
-  const tipo = /\.html?$/i.test(archivo.name) ? 'mfc' : 'excel';
-  return pedir<ResultadoImportacion>(`/api/importar/${tipo}`, { method: 'POST', body: datos });
+  return pedir<ResultadoImportacion>('/api/importar/excel', { method: 'POST', body: datos });
+}
+
+/** Lee una pestaña de colección de MFC guardada (.html) y sugiere coincidencias sin guardar nada. */
+export function previsualizarMfc(archivo: File): Promise<PrevisualizacionMfc> {
+  const datos = new FormData();
+  datos.append('archivo', archivo);
+  return pedir<PrevisualizacionMfc>('/api/importar/mfc/previsualizar', { method: 'POST', body: datos });
+}
+
+export function aplicarMfc(estado: EstadoFigura, decisiones: DecisionMfc[]): Promise<ResultadoImportacion> {
+  return pedir<ResultadoImportacion>('/api/importar/mfc', {
+    method: 'POST',
+    body: JSON.stringify({ estado, decisiones }),
+  });
 }

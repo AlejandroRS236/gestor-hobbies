@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import {
-  actualizarFigura, crearFigura, eliminarFigura, eliminarTienda, guardarTienda, importarArchivo,
+  actualizarFigura, crearFigura, eliminarFigura, eliminarTienda, guardarTienda, importarExcel, aplicarMfc, previsualizarMfc,
   listarFiguras, listarTiendas,
 } from './api';
 import { FormularioFigura } from './components/FormularioFigura';
 import { FormularioTienda } from './components/FormularioTienda';
 import { ListaTiendas } from './components/ListaTiendas';
+import { RevisionMfc } from './components/RevisionMfc';
 import { TarjetaFigura } from './components/TarjetaFigura';
-import type { EstadoFigura, Figura, FiguraPeticion, Tienda } from './tipos';
+import type {
+  DecisionMfc, EstadoFigura, Figura, FiguraPeticion, PrevisualizacionMfc, ResultadoImportacion, Tienda,
+} from './tipos';
 import { estados, textoEstado } from './tipos';
 
 type Vista = 'figuras' | 'tiendas';
@@ -24,6 +27,7 @@ export default function App() {
   const [mensaje, setMensaje] = useState<string | null>(null);
   const [edicionFigura, setEdicionFigura] = useState<EdicionFigura>(null);
   const [edicionTienda, setEdicionTienda] = useState<EdicionTienda>(null);
+  const [revisionMfc, setRevisionMfc] = useState<{ vista: PrevisualizacionMfc; todas: Figura[] } | null>(null);
   const selectorExcel = useRef<HTMLInputElement>(null);
 
   const cargarFiguras = useCallback(async () => {
@@ -92,22 +96,39 @@ export default function App() {
     await cargarTiendas();
   }
 
-  async function alElegirExcel(evento: ChangeEvent<HTMLInputElement>) {
+  function mostrarResultado(r: ResultadoImportacion) {
+    const partes = [`${r.figurasCreadas} figuras importadas`];
+    if (r.tiendasCreadas > 0) partes.push(`${r.tiendasCreadas} tiendas nuevas`);
+    if (r.figurasOmitidas > 0) partes.push(`${r.figurasOmitidas} sin importar`);
+    setMensaje(partes.join(', ') + '.' + (r.avisos.length ? ` ${r.avisos.join(' · ')}` : ''));
+  }
+
+  async function alElegirArchivo(evento: ChangeEvent<HTMLInputElement>) {
     const archivo = evento.target.files?.[0];
     evento.target.value = '';
     if (!archivo) return;
-    setMensaje('Importando…');
+    setMensaje('Leyendo el archivo…');
     try {
-      const r = await importarArchivo(archivo);
-      const partes = [`${r.figurasCreadas} figuras importadas`];
-      if (r.tiendasCreadas > 0) partes.push(`${r.tiendasCreadas} tiendas nuevas`);
-      if (r.figurasOmitidas > 0) partes.push(`${r.figurasOmitidas} ya existían y no se han tocado`);
-      setMensaje(partes.join(', ') + '.' + (r.avisos.length ? ` Avisos: ${r.avisos.join(' · ')}` : ''));
-      await Promise.all([cargarFiguras(), cargarTiendas()]);
+      if (/\.html?$/i.test(archivo.name)) {
+        const [vista, todas] = await Promise.all([previsualizarMfc(archivo), listarFiguras()]);
+        setMensaje(null);
+        setRevisionMfc({ vista, todas });
+      } else {
+        mostrarResultado(await importarExcel(archivo));
+        await Promise.all([cargarFiguras(), cargarTiendas()]);
+      }
     } catch (e) {
       setMensaje(null);
       setError((e as Error).message);
     }
+  }
+
+  async function confirmarMfc(decisiones: DecisionMfc[]) {
+    if (!revisionMfc) return;
+    const r = await aplicarMfc(revisionMfc.vista.estado, decisiones);
+    setRevisionMfc(null);
+    mostrarResultado(r);
+    await cargarFiguras();
   }
 
   return (
@@ -125,7 +146,7 @@ export default function App() {
           <button className="secundario" onClick={() => selectorExcel.current?.click()}>
             Importar
           </button>
-          <input ref={selectorExcel} type="file" accept=".xlsx,.html,.htm" hidden onChange={alElegirExcel} />
+          <input ref={selectorExcel} type="file" accept=".xlsx,.html,.htm" hidden onChange={alElegirArchivo} />
           {vista === 'figuras' ? (
             <button className="principal" onClick={() => setEdicionFigura({ modo: 'nueva' })}>
               + Añadir figura
@@ -175,6 +196,15 @@ export default function App() {
           onCrearTienda={crearTiendaRapida}
           onEliminar={edicionFigura.modo === 'editar' ? () => borrarFigura(edicionFigura.figura) : undefined}
           onCancelar={() => setEdicionFigura(null)}
+        />
+      )}
+
+      {revisionMfc && (
+        <RevisionMfc
+          vista={revisionMfc.vista}
+          figuras={revisionMfc.todas}
+          onConfirmar={confirmarMfc}
+          onCancelar={() => setRevisionMfc(null)}
         />
       )}
 

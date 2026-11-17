@@ -3,21 +3,38 @@ package com.gestorhobbies.core.importacion;
 import com.gestorhobbies.core.figuras.EstadoFigura;
 import com.gestorhobbies.core.figuras.Figura;
 import com.gestorhobbies.core.figuras.FiguraRepository;
+import com.gestorhobbies.core.importacion.ImportadorMfc.Accion;
+import com.gestorhobbies.core.importacion.ImportadorMfc.Candidato;
+import com.gestorhobbies.core.importacion.ImportadorMfc.Decision;
+import com.gestorhobbies.core.importacion.ImportadorMfc.Previsualizacion;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class ImportadorMfcTest {
+
+    private FiguraRepository figuras;
+    private ImportadorMfc importador;
+
+    @BeforeEach
+    void preparar() {
+        figuras = mock(FiguraRepository.class);
+        importador = new ImportadorMfc(figuras);
+    }
 
     private static String pagina(String status, String items) {
         return """
@@ -47,54 +64,92 @@ class ImportadorMfcTest {
         return new ByteArrayInputStream(contenido.getBytes(StandardCharsets.UTF_8));
     }
 
+    private static Figura existente(long id, String titulo) {
+        Figura f = new Figura(titulo, EstadoFigura.PENSANDO_COMPRAR);
+        ReflectionTestUtils.setField(f, "id", id);
+        return f;
+    }
+
     @Test
-    void importaLaPestanaOwnedComoFigurasQueTengo() throws IOException {
-        FiguraRepository figuras = mock(FiguraRepository.class);
+    void leeLaPestanaYLosDatosDeCadaFigura() throws IOException {
+        when(figuras.findAll()).thenReturn(List.of());
         String contenido = pagina("2",
                 item("1464692", "1464692-48810.jpg",
                         "Hagane no Renkinjutsushi Fullmetal Alchemist - Roy Mustang - Pop Up Parade (Good Smile Company)")
                         + item("1873714", "1873714-7ffc0.jpg",
                         "[Intermediate] - Steins;Gate - Makise Kurisu - Aqua Float Girls (Taito)"));
 
-        ResultadoImportacion resultado = new ImportadorMfc(figuras).importar(html(contenido));
+        Previsualizacion vista = importador.previsualizar(html(contenido));
 
-        assertThat(resultado.figurasCreadas()).isEqualTo(2);
-        ArgumentCaptor<Figura> captor = ArgumentCaptor.forClass(Figura.class);
-        verify(figuras, times(2)).save(captor.capture());
-
-        Figura roy = captor.getAllValues().get(0);
-        assertThat(roy.getTitulo())
-                .isEqualTo("Hagane no Renkinjutsushi Fullmetal Alchemist - Roy Mustang - Pop Up Parade");
-        assertThat(roy.getFabricante()).isEqualTo("Good Smile Company");
-        assertThat(roy.getEstado()).isEqualTo(EstadoFigura.LA_TENGO);
-        assertThat(roy.getImagenUrl())
-                .isEqualTo("https://static.myfigurecollection.net/upload/items/2/1464692-48810.jpg");
-        assertThat(roy.getNotas()).contains("https://myfigurecollection.net/item/1464692");
-
-        assertThat(captor.getAllValues().get(1).getTitulo()).isEqualTo("Steins;Gate - Makise Kurisu - Aqua Float Girls");
+        assertThat(vista.estado()).isEqualTo(EstadoFigura.LA_TENGO);
+        assertThat(vista.candidatos()).hasSize(2);
+        Candidato roy = vista.candidatos().get(0);
+        assertThat(roy.titulo()).isEqualTo("Hagane no Renkinjutsushi Fullmetal Alchemist - Roy Mustang - Pop Up Parade");
+        assertThat(roy.fabricante()).isEqualTo("Good Smile Company");
+        assertThat(roy.imagenUrl()).isEqualTo("https://static.myfigurecollection.net/upload/items/2/1464692-48810.jpg");
+        assertThat(roy.sugeridaId()).isNull();
+        assertThat(vista.candidatos().get(1).titulo()).isEqualTo("Steins;Gate - Makise Kurisu - Aqua Float Girls");
     }
 
     @Test
-    void laPestanaWishedVaAMeGustaYNoDuplica() throws IOException {
-        FiguraRepository figuras = mock(FiguraRepository.class);
-        when(figuras.existsByTituloIgnoreCase("Sousou no Frieren - Frieren - Desktop Cute")).thenReturn(true);
+    void sugiereLaFiguraExistenteMasParecidaSinRepetirla() throws IOException {
+        when(figuras.findAll()).thenReturn(List.of(
+                existente(1, "Kurisu Makise – Racing 1/7"),
+                existente(2, "Kurisu Makise – Swimsuit Ver. 1/7"),
+                existente(3, "Coco 1/6 (Witch Hat Atelier) Re-run")));
         String contenido = pagina("0",
-                item("2477095", "2477095-b38c0.jpg", "Sousou no Frieren - Frieren - Desktop Cute (Taito)")
-                        + item("2701969", "2701969-0967a.jpg", "Spy × Family - Yor Forger - Luminasta (Sega Fave)"));
+                item("2007474", "2007474-aaa.jpg", "Steins;Gate - Makise Kurisu - 1/7 - Racing Ver. (Solarain)")
+                        + item("2007467", "2007467-bbb.jpg", "Steins;Gate - Makise Kurisu - 1/7 - Swimsuit Ver. (Solarain)")
+                        + item("806111", "806111-ccc.jpg", "Tongari Boushi no Atelier - Coco - 1/6 (quesQ)")
+                        + item("2477095", "2477095-ddd.jpg", "Sousou no Frieren - Frieren - Desktop Cute (Taito)"));
 
-        ResultadoImportacion resultado = new ImportadorMfc(figuras).importar(html(contenido));
+        Previsualizacion vista = importador.previsualizar(html(contenido));
+
+        assertThat(vista.estado()).isEqualTo(EstadoFigura.ME_GUSTA);
+        assertThat(vista.candidatos()).extracting(Candidato::sugeridaId).containsExactly(1L, 2L, 3L, null);
+    }
+
+    @Test
+    void reconoceLasFigurasYaImportadasPorSuEnlace() throws IOException {
+        Figura ya = existente(9, "Otro nombre cualquiera");
+        ya.setNotas("MyFigureCollection: https://myfigurecollection.net/item/2477095");
+        when(figuras.findAll()).thenReturn(List.of(ya));
+        String contenido = pagina("0", item("2477095", "2477095-ddd.jpg", "Sousou no Frieren - Frieren (Taito)"));
+
+        Candidato frieren = importador.previsualizar(html(contenido)).candidatos().get(0);
+
+        assertThat(frieren.yaImportada()).isTrue();
+        assertThat(frieren.sugeridaId()).isEqualTo(9L);
+    }
+
+    @Test
+    void creaFusionaYOmiteSegunLoDecidido() {
+        Figura racing = existente(1, "Kurisu Makise – Racing 1/7");
+        racing.setNotas("La favorita.");
+        when(figuras.findById(1L)).thenReturn(Optional.of(racing));
+
+        ResultadoImportacion resultado = importador.aplicar(EstadoFigura.ME_GUSTA, List.of(
+                new Decision("2007474", "Kurisu Racing", "Solarain", "https://img/racing.jpg", Accion.FUSIONAR, 1L),
+                new Decision("2477095", "Frieren", "Taito", "https://img/frieren.jpg", Accion.CREAR, null),
+                new Decision("1", "Omitida", null, null, Accion.OMITIR, null)));
 
         assertThat(resultado.figurasCreadas()).isEqualTo(1);
         assertThat(resultado.figurasOmitidas()).isEqualTo(1);
+        assertThat(racing.getTitulo()).isEqualTo("Kurisu Makise – Racing 1/7");
+        assertThat(racing.getImagenUrl()).isEqualTo("https://img/racing.jpg");
+        assertThat(racing.getFabricante()).isEqualTo("Solarain");
+        assertThat(racing.getNotas()).startsWith("La favorita.").contains("myfigurecollection.net/item/2007474");
+
         ArgumentCaptor<Figura> captor = ArgumentCaptor.forClass(Figura.class);
         verify(figuras).save(captor.capture());
+        assertThat(captor.getValue().getTitulo()).isEqualTo("Frieren");
         assertThat(captor.getValue().getEstado()).isEqualTo(EstadoFigura.ME_GUSTA);
     }
 
     @Test
     void rechazaArchivosQueNoSonDeMfc() {
-        FiguraRepository figuras = mock(FiguraRepository.class);
-        assertThatThrownBy(() -> new ImportadorMfc(figuras).importar(html("<html><body>Hola</body></html>")))
+        assertThatThrownBy(() -> importador.previsualizar(html("<html><body>Hola</body></html>")))
                 .isInstanceOf(IllegalArgumentException.class);
+        verify(figuras, never()).save(org.mockito.ArgumentMatchers.any());
     }
 }

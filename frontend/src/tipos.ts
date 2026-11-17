@@ -104,3 +104,30 @@ export interface ResultadoImportacion {
   tiendasCreadas: number;
   avisos: string[];
 }
+
+export interface CandidatoMfc {
+  mfcId: string;
+  titulo: string;
+  fabricante: string | null;
+  imagenUrl: string | null;
+  sugeridaId: number | null;
+  sugeridaTitulo: string | null;
+  parecido: number;
+  yaImportada: boolean;
+}
+
+export interface PrevisualizacionMfc {
+  estado: EstadoFigura;
+  candidatos: CandidatoMfc[];
+}
+
+export type AccionMfc = 'CREAR' | 'FUSIONAR' | 'OMITIR';
+
+export interface DecisionMfc {
+  mfcId: string;
+  titulo: string;
+  fabricante: string | null;
+  imagenUrl: string | null;
+  accion: AccionMfc;
+  figuraId: number | null;
+}
