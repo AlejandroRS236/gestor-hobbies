@@ -7,10 +7,15 @@ import {
 import { FormularioFigura } from './components/FormularioFigura';
 import { FormularioTienda } from './components/FormularioTienda';
 import { ListaTiendas } from './components/ListaTiendas';
+import { BarraFiltros } from './components/BarraFiltros';
 import { RevisionMfc } from './components/RevisionMfc';
+import type { DecisionConEstado } from './components/RevisionMfc';
+import { aplicarFiltros, filtrosVacios, porEstado, resumir } from './filtrado';
+import type { Filtros } from './filtrado';
+import { formatearEuros } from './formato';
 import { TarjetaFigura } from './components/TarjetaFigura';
 import type {
-  DecisionMfc, EstadoFigura, Figura, FiguraPeticion, PrevisualizacionMfc, ResultadoImportacion, Tienda,
+  EstadoFigura, Figura, FiguraPeticion, PrevisualizacionMfc, ResultadoImportacion, Tienda,
 } from './tipos';
 import { estados, textoEstado } from './tipos';
 
@@ -28,17 +33,18 @@ export default function App() {
   const [mensaje, setMensaje] = useState<string | null>(null);
   const [edicionFigura, setEdicionFigura] = useState<EdicionFigura>(null);
   const [edicionTienda, setEdicionTienda] = useState<EdicionTienda>(null);
-  const [revisionMfc, setRevisionMfc] = useState<{ vista: PrevisualizacionMfc; todas: Figura[] } | null>(null);
+  const [revisionMfc, setRevisionMfc] = useState<{ vistas: PrevisualizacionMfc[]; todas: Figura[] } | null>(null);
+  const [filtros, setFiltros] = useState<Filtros>(filtrosVacios);
   const selectorExcel = useRef<HTMLInputElement>(null);
 
   const cargarFiguras = useCallback(async () => {
     try {
-      setFiguras(await listarFiguras(estado === 'TODAS' ? undefined : estado));
+      setFiguras(await listarFiguras());
       setError(null);
     } catch (e) {
       setError((e as Error).message);
     }
-  }, [estado]);
+  }, []);
 
   const cargarTiendas = useCallback(async () => {
     try {
@@ -63,10 +69,9 @@ export default function App() {
       await crearFigura(datos);
     }
     setEdicionFigura(null);
+    await cargarFiguras();
     if (estado !== 'TODAS' && datos.estado !== estado) {
       setEstado(datos.estado);
-    } else {
-      await cargarFiguras();
     }
   }
 
@@ -105,18 +110,26 @@ export default function App() {
   }
 
   async function alElegirArchivo(evento: ChangeEvent<HTMLInputElement>) {
-    const archivo = evento.target.files?.[0];
+    const archivos = Array.from(evento.target.files ?? []);
     evento.target.value = '';
-    if (!archivo) return;
-    setMensaje('Leyendo el archivo…');
+    if (archivos.length === 0) return;
+    const html = archivos.filter((a) => /\.html?$/i.test(a.name));
+    const excel = archivos.filter((a) => !/\.html?$/i.test(a.name));
+    setMensaje(archivos.length > 1 ? `Leyendo ${archivos.length} archivos…` : 'Leyendo el archivo…');
     try {
-      if (/\.html?$/i.test(archivo.name)) {
-        const [vista, todas] = await Promise.all([previsualizarMfc(archivo), listarFiguras()]);
-        setMensaje(null);
-        setRevisionMfc({ vista, todas });
-      } else {
+      for (const archivo of excel) {
         mostrarResultado(await importarExcel(archivo));
+      }
+      if (excel.length > 0) {
         await Promise.all([cargarFiguras(), cargarTiendas()]);
+      }
+      if (html.length > 0) {
+        const vistas = [];
+        for (const archivo of html) {
+          vistas.push(await previsualizarMfc(archivo));
+        }
+        setMensaje(null);
+        setRevisionMfc({ vistas, todas: await listarFiguras() });
       }
     } catch (e) {
       setMensaje(null);
@@ -124,13 +137,22 @@ export default function App() {
     }
   }
 
-  async function confirmarMfc(decisiones: DecisionMfc[]) {
-    if (!revisionMfc) return;
-    const r = await aplicarMfc(revisionMfc.vista.estado, decisiones);
+  async function confirmarMfc(decisiones: DecisionConEstado[]) {
+    const estadosUsados = [...new Set(decisiones.map((d) => d.estado))];
+    const total: ResultadoImportacion = { figurasCreadas: 0, figurasOmitidas: 0, tiendasCreadas: 0, avisos: [] };
+    for (const estadoGrupo of estadosUsados) {
+      const r = await aplicarMfc(estadoGrupo, decisiones.filter((d) => d.estado === estadoGrupo).map((d) => d.decision));
+      total.figurasCreadas += r.figurasCreadas;
+      total.figurasOmitidas += r.figurasOmitidas;
+      total.avisos.push(...r.avisos);
+    }
     setRevisionMfc(null);
-    mostrarResultado(r);
+    mostrarResultado(total);
     await cargarFiguras();
   }
+
+  const visibles = aplicarFiltros(porEstado(figuras, estado), filtros);
+  const resumen = resumir(visibles);
 
   return (
     <main className="app">
@@ -147,7 +169,7 @@ export default function App() {
           <button className="secundario" onClick={() => selectorExcel.current?.click()}>
             Importar
           </button>
-          <input ref={selectorExcel} type="file" accept=".xlsx,.html,.htm" hidden onChange={alElegirArchivo} />
+          <input ref={selectorExcel} type="file" accept=".xlsx,.html,.htm" multiple hidden onChange={alElegirArchivo} />
           {vista === 'figuras' ? (
             <button className="principal" onClick={() => setEdicionFigura({ modo: 'nueva' })}>
               + Añadir figura
@@ -170,18 +192,32 @@ export default function App() {
       {vista === 'figuras' ? (
         <>
           <nav className="pestanas">
-            <button className={estado === 'TODAS' ? 'activa' : ''} onClick={() => setEstado('TODAS')}>
-              Todas
-            </button>
-            {estados.map((e) => (
+            {(['TODAS', ...estados] as Filtro[]).map((e) => (
               <button key={e} className={e === estado ? 'activa' : ''} onClick={() => setEstado(e)}>
-                {textoEstado[e]}
+                {e === 'TODAS' ? 'Todas' : textoEstado[e]}
+                <span className="contador">{porEstado(figuras, e).length}</span>
               </button>
             ))}
           </nav>
-          {!error && figuras.length === 0 && <p className="vacio">No hay figuras en esta lista todavía.</p>}
+
+          <BarraFiltros figuras={figuras} filtros={filtros} onCambiar={setFiltros} />
+
+          <p className="resumen" aria-live="polite">
+            <strong>{visibles.length}</strong> {visibles.length === 1 ? 'figura' : 'figuras'}
+            <span className="separador">·</span>
+            Total <strong>{formatearEuros(resumen.total)}</strong>
+            {resumen.sinPrecio > 0 && (
+              <span className="pista"> ({resumen.sinPrecio} sin precio, no cuentan)</span>
+            )}
+          </p>
+
+          {!error && visibles.length === 0 && (
+            <p className="vacio">
+              {figuras.length === 0 ? 'Todavía no hay figuras.' : 'Ninguna figura cumple estos filtros.'}
+            </p>
+          )}
           <section className="rejilla">
-            {figuras.map((f) => (
+            {visibles.map((f) => (
               <TarjetaFigura key={f.id} figura={f} onAbrir={() => setEdicionFigura({ modo: 'editar', figura: f })} />
             ))}
           </section>
@@ -205,7 +241,7 @@ export default function App() {
 
       {revisionMfc && (
         <RevisionMfc
-          vista={revisionMfc.vista}
+          vistas={revisionMfc.vistas}
           figuras={revisionMfc.todas}
           onConfirmar={confirmarMfc}
           onCancelar={() => setRevisionMfc(null)}

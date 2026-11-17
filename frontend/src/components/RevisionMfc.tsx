@@ -1,18 +1,44 @@
 import { useState } from 'react';
-import type { CandidatoMfc, DecisionMfc, Figura, PrevisualizacionMfc } from '../tipos';
+import type { CandidatoMfc, DecisionMfc, EstadoFigura, Figura, PrevisualizacionMfc } from '../tipos';
 import { textoEstado } from '../tipos';
 
+/** Una decisión junto con el estado que tendrá la figura si se crea nueva. */
+export interface DecisionConEstado {
+  estado: EstadoFigura;
+  decision: DecisionMfc;
+}
+
 interface Props {
-  vista: PrevisualizacionMfc;
+  /** Una previsualización por archivo importado. */
+  vistas: PrevisualizacionMfc[];
   figuras: Figura[];
-  onConfirmar: (decisiones: DecisionMfc[]) => Promise<void>;
+  onConfirmar: (decisiones: DecisionConEstado[]) => Promise<void>;
   onCancelar: () => void;
 }
 
-/** Valor del desplegable: "crear", "omitir" o "f:<id>" para fusionar con esa figura. */
+/**
+ * Valor del desplegable: "crear", "omitir" o "f:<id>" para fusionar con esa figura.
+ * Si ya estaba importada pero ahora viene la página de la figura (con ficha y
+ * galería), se propone completarla en vez de omitirla.
+ */
 function valorInicial(c: CandidatoMfc) {
-  if (c.yaImportada) return 'omitir';
+  if (c.yaImportada && !c.ficha) return 'omitir';
   return c.sugeridaId !== null ? `f:${c.sugeridaId}` : 'crear';
+}
+
+/** Junta los candidatos de todos los archivos, sin repetir figuras de MFC. */
+function juntar(vistas: PrevisualizacionMfc[]) {
+  const vistos = new Map<string, { candidato: CandidatoMfc; estado: EstadoFigura }>();
+  for (const vista of vistas) {
+    for (const c of vista.candidatos) {
+      const anterior = vistos.get(c.mfcId);
+      // Si la misma figura viene en una lista y en su propia página, gana la página (trae la ficha).
+      if (!anterior || (!anterior.candidato.ficha && c.ficha)) {
+        vistos.set(c.mfcId, { candidato: c, estado: anterior?.estado ?? vista.estado });
+      }
+    }
+  }
+  return [...vistos.values()];
 }
 
 function aDecision(c: CandidatoMfc, valor: string): DecisionMfc {
@@ -25,8 +51,9 @@ function aDecision(c: CandidatoMfc, valor: string): DecisionMfc {
   return { ...base, accion: 'FUSIONAR', figuraId: Number(valor.slice(2)) };
 }
 
-export function RevisionMfc({ vista, figuras, onConfirmar, onCancelar }: Props) {
-  const [valores, setValores] = useState<string[]>(vista.candidatos.map(valorInicial));
+export function RevisionMfc({ vistas, figuras, onConfirmar, onCancelar }: Props) {
+  const [filas] = useState(() => juntar(vistas));
+  const [valores, setValores] = useState<string[]>(filas.map((f) => valorInicial(f.candidato)));
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const ordenadas = [...figuras].sort((a, b) => a.titulo.localeCompare(b.titulo));
@@ -37,7 +64,7 @@ export function RevisionMfc({ vista, figuras, onConfirmar, onCancelar }: Props) 
   async function confirmar() {
     setGuardando(true);
     try {
-      await onConfirmar(vista.candidatos.map((c, i) => aDecision(c, valores[i])));
+      await onConfirmar(filas.map((f, i) => ({ estado: f.estado, decision: aDecision(f.candidato, valores[i]) })));
     } catch (e) {
       setError((e as Error).message);
       setGuardando(false);
@@ -50,18 +77,19 @@ export function RevisionMfc({ vista, figuras, onConfirmar, onCancelar }: Props) 
         aria-label="Revisar importación de MyFigureCollection">
         <h2>Revisar importación de MyFigureCollection</h2>
         <p className="pista">
-          Las figuras nuevas entrarán en <strong>{textoEstado[vista.estado]}</strong>. Si una ya la tienes con otro
-          nombre, elígela y solo se le añadirán la foto y el enlace de MFC.
+          Si una figura ya la tienes (aunque sea con otro nombre), elígela y se completará con las fotos, la ficha y
+          el enlace de MFC sin tocar tus datos de compra. Las nuevas entran en el estado que se indica en cada una.
         </p>
 
         <ul className="lista-revision">
-          {vista.candidatos.map((c, i) => (
+          {filas.map(({ candidato: c, estado }, i) => (
             <li key={c.mfcId}>
               <div className="miniatura">{c.imagenUrl && <img src={c.imagenUrl} alt="" referrerPolicy="no-referrer" />}</div>
               <div className="datos-revision">
                 <span className="nombre-tienda">{c.titulo}</span>
                 <span className="dato">
                   {c.fabricante}
+                  {valores[i] === 'crear' && ` · entrará en ${textoEstado[estado]}`}
                   {c.ficha && ' · con ficha técnica'}
                   {c.imagenes && c.imagenes.length > 1 && ` · ${c.imagenes.length} fotos`}
                   {c.yaImportada && ' · ya importada antes'}
