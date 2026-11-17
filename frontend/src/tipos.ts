@@ -35,3 +35,25 @@ export interface Figura {
   enlaces: Enlace[];
   mejorTotal: number | null;
 }
+
+export interface EnlacePeticion {
+  tienda: string;
+  url: string;
+  precio: number | null;
+  envio: number | null;
+}
+
+export interface FiguraPeticion {
+  titulo: string;
+  estado: EstadoFigura;
+  imagenUrl: string | null;
+  nota: number | null;
+  notas: string | null;
+  fabricante: string | null;
+  jan: string | null;
+  fechaSalida: string | null;
+  pedirAntesDe: string | null;
+  metodoPago: string | null;
+  riesgo: string | null;
+  enlaces: EnlacePeticion[];
+}

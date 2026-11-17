@@ -4,13 +4,26 @@ import { formatearEuros, formatearFecha, formatearNota } from '../formato';
 
 interface Props {
   figura: Figura;
+  onAbrir?: () => void;
 }
 
-export function TarjetaFigura({ figura }: Props) {
+export function TarjetaFigura({ figura, onAbrir }: Props) {
   const mejorEnlace = figura.enlaces.find((e) => e.total !== null && e.total === figura.mejorTotal);
 
   return (
-    <article className="tarjeta">
+    <article
+      className="tarjeta"
+      role={onAbrir ? 'button' : undefined}
+      tabIndex={onAbrir ? 0 : undefined}
+      aria-label={onAbrir ? `Editar ${figura.titulo}` : undefined}
+      onClick={onAbrir}
+      onKeyDown={(e) => {
+        if (onAbrir && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          onAbrir();
+        }
+      }}
+    >
       <div className="tarjeta-imagen">
         {figura.imagenUrl ? <img src={figura.imagenUrl} alt={figura.titulo} /> : <span aria-hidden="true">?</span>}
       </div>
