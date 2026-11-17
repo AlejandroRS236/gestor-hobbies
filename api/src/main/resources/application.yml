@@ -1,6 +1,11 @@
 spring:
   application:
     name: gestor-hobbies
+  config:
+    # Lee el archivo .env de la raíz del proyecto (o de la carpeta actual) si existe.
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]
   datasource:
     # Base de datos compartida (Supabase). Los valores reales van en variables
     # de entorno o en un archivo .env que NO se sube al repositorio.
