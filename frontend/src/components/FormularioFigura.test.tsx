@@ -1,9 +1,22 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { FormularioFigura } from './FormularioFigura';
-import type { FiguraPeticion } from '../tipos';
+import type { FiguraPeticion, Tienda } from '../tipos';
 
-function renderizar(onGuardar = vi.fn().mockResolvedValue(undefined)) {
-  render(<FormularioFigura estadoInicial="PENSANDO_COMPRAR" onGuardar={onGuardar} onCancelar={vi.fn()} />);
+const figuya: Tienda = {
+  id: 1, nombre: 'Figuya', web: null, pais: null, metodosPago: null, condiciones: null,
+  envioPorDefecto: 18.9, confianza: 'FIABLE', notas: null,
+};
+
+function renderizar(onGuardar = vi.fn().mockResolvedValue(undefined), onCrearTienda = vi.fn()) {
+  render(
+    <FormularioFigura
+      tiendas={[figuya]}
+      estadoInicial="PENSANDO_COMPRAR"
+      onGuardar={onGuardar}
+      onCrearTienda={onCrearTienda}
+      onCancelar={vi.fn()}
+    />,
+  );
   return onGuardar;
 }
 
@@ -16,32 +29,49 @@ describe('FormularioFigura', () => {
     expect(onGuardar).not.toHaveBeenCalled();
   });
 
-  it('guarda la figura con sus tiendas, admitiendo coma decimal', async () => {
+  it('al elegir una tienda rellena su envío habitual y guarda con coma decimal', async () => {
     const onGuardar = renderizar();
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: '  Guerrera escala 1/7 ' } });
     fireEvent.change(screen.getByLabelText('Nota (0-10)'), { target: { value: '8,7' } });
     fireEvent.click(screen.getByRole('button', { name: '+ Añadir tienda' }));
-    fireEvent.change(screen.getByLabelText('Tienda'), { target: { value: 'Figuya' } });
+    fireEvent.change(screen.getByLabelText('Tienda'), { target: { value: '1' } });
+
+    expect(screen.getByLabelText('Envío')).toHaveValue('18,9');
+
     fireEvent.change(screen.getByLabelText('Enlace'), { target: { value: 'https://figuya.com/x' } });
     fireEvent.change(screen.getByLabelText('Precio'), { target: { value: '149,90' } });
+    fireEvent.change(screen.getByLabelText('Estado en la tienda'), { target: { value: 'RESERVADA' } });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
     await waitFor(() => expect(onGuardar).toHaveBeenCalledTimes(1));
     const datos: FiguraPeticion = onGuardar.mock.calls[0][0];
     expect(datos.titulo).toBe('Guerrera escala 1/7');
-    expect(datos.estado).toBe('PENSANDO_COMPRAR');
     expect(datos.nota).toBe(8.7);
-    expect(datos.enlaces).toEqual([{ tienda: 'Figuya', url: 'https://figuya.com/x', precio: 149.9, envio: null }]);
+    expect(datos.enlaces).toHaveLength(1);
+    expect(datos.enlaces[0]).toMatchObject({
+      tiendaId: 1, url: 'https://figuya.com/x', precio: 149.9, envio: 18.9, estado: 'RESERVADA',
+    });
   });
 
-  it('pide nombre y enlace en cada tienda', async () => {
+  it('pide elegir la tienda de cada fila', async () => {
     const onGuardar = renderizar();
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Maga' } });
     fireEvent.click(screen.getByRole('button', { name: '+ Añadir tienda' }));
-    fireEvent.change(screen.getByLabelText('Tienda'), { target: { value: 'Figuya' } });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Cada tienda necesita nombre y enlace.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Elige la tienda de cada fila');
     expect(onGuardar).not.toHaveBeenCalled();
+  });
+
+  it('permite crear una tienda nueva sin salir del formulario', async () => {
+    const nueva: Tienda = { ...figuya, id: 2, nombre: 'Frikanime', envioPorDefecto: null };
+    const onCrearTienda = vi.fn().mockResolvedValue(nueva);
+    renderizar(undefined, onCrearTienda);
+    fireEvent.click(screen.getByRole('button', { name: '+ Añadir tienda' }));
+    fireEvent.change(screen.getByLabelText('Tienda'), { target: { value: '__nueva__' } });
+    fireEvent.change(screen.getByLabelText('Nombre de la tienda nueva'), { target: { value: 'Frikanime' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear tienda' }));
+
+    await waitFor(() => expect(onCrearTienda).toHaveBeenCalledWith('Frikanime'));
   });
 });

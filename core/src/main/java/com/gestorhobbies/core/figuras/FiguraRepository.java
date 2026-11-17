@@ -9,4 +9,6 @@ public interface FiguraRepository extends JpaRepository<Figura, Long> {
     List<Figura> findByEstadoOrderByTituloAsc(EstadoFigura estado);
 
     List<Figura> findAllByOrderByTituloAsc();
+
+    boolean existsByTituloIgnoreCase(String titulo);
 }

@@ -1,6 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { TarjetaFigura } from './TarjetaFigura';
-import type { Figura } from '../tipos';
+import type { Enlace, Figura } from '../tipos';
+
+const enlace = (id: number, tienda: string, total: number, extra: Partial<Enlace> = {}): Enlace => ({
+  id, tiendaId: id, tienda, confianza: 'FIABLE', url: null, precio: total, envio: 0, total,
+  salida: null, pedirAntesDe: null, estado: 'NORMAL', notas: null, precioVisto: null, comprobadoEl: null,
+  ...extra,
+});
 
 const base: Figura = {
   id: 1,
@@ -11,15 +17,12 @@ const base: Figura = {
   estado: 'PENSANDO_COMPRAR',
   fabricante: null,
   jan: null,
-  fechaSalida: null,
-  pedirAntesDe: '2026-11-20',
-  metodoPago: null,
   riesgo: null,
-  enlaces: [
-    { id: 1, tienda: 'Figuya', url: 'https://figuya.com/x', precio: 149.9, envio: 9, total: 158.9 },
-    { id: 2, tienda: 'Japan&Co', url: 'https://japanandco.example/x', precio: 155, envio: 0, total: 155 },
-  ],
+  enlaces: [enlace(1, 'Figuya', 158.9, { estado: 'RESERVADA' }), enlace(2, 'Japan&Co', 155)],
+  mejorEnlaceId: 2,
   mejorTotal: 155,
+  pedirAntesDe: '2026-11-20',
+  avisoNoComprar: false,
 };
 
 describe('TarjetaFigura', () => {
@@ -32,13 +35,14 @@ describe('TarjetaFigura', () => {
     expect(screen.getByText('2 tiendas')).toBeInTheDocument();
   });
 
-  it('muestra la nota con decimales', () => {
+  it('indica dónde está reservada y la nota con decimales', () => {
     render(<TarjetaFigura figura={base} />);
+    expect(screen.getByText('Reservada en Figuya')).toBeInTheDocument();
     expect(screen.getByText('8,7')).toBeInTheDocument();
   });
 
-  it('no muestra precio si ningún enlace lo tiene', () => {
-    render(<TarjetaFigura figura={{ ...base, enlaces: [], mejorTotal: null }} />);
-    expect(screen.queryByText('Figuya')).not.toBeInTheDocument();
+  it('avisa si alguna tienda está marcada como no comprar', () => {
+    render(<TarjetaFigura figura={{ ...base, avisoNoComprar: true }} />);
+    expect(screen.getByText(/no comprar/)).toBeInTheDocument();
   });
 });

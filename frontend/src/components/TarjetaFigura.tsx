@@ -8,7 +8,8 @@ interface Props {
 }
 
 export function TarjetaFigura({ figura, onAbrir }: Props) {
-  const mejorEnlace = figura.enlaces.find((e) => e.total !== null && e.total === figura.mejorTotal);
+  const mejorEnlace = figura.enlaces.find((e) => e.id === figura.mejorEnlaceId);
+  const reservada = figura.enlaces.find((e) => e.estado === 'RESERVADA');
 
   return (
     <article
@@ -48,6 +49,8 @@ export function TarjetaFigura({ figura, onAbrir }: Props) {
             <span>{formatearNota(figura.nota)}</span>
           </p>
         )}
+        {reservada && <p className="etiqueta-reserva">Reservada en {reservada.tienda}</p>}
+        {figura.avisoNoComprar && <p className="aviso">Tiene una tienda marcada como "no comprar"</p>}
         {figura.enlaces.length > 1 && <p className="alternativas">{figura.enlaces.length} tiendas</p>}
       </div>
     </article>

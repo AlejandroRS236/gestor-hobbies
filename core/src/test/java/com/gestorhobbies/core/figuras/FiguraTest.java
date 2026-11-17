@@ -1,6 +1,9 @@
 package com.gestorhobbies.core.figuras;
 
 import com.gestorhobbies.core.comun.Enlace;
+import com.gestorhobbies.core.comun.EstadoEnlace;
+import com.gestorhobbies.core.tiendas.Confianza;
+import com.gestorhobbies.core.tiendas.Tienda;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -12,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class FiguraTest {
 
     private static Enlace enlace(String tienda, String precio, String envio) {
-        return new Enlace(tienda, "https://" + tienda + ".example/figura",
+        return new Enlace(new Tienda(tienda), "https://" + tienda + ".example/figura",
                 precio == null ? null : new BigDecimal(precio),
                 envio == null ? null : new BigDecimal(envio));
     }
@@ -33,7 +36,7 @@ class FiguraTest {
 
         assertThat(figura.enlaceMasBarato())
                 .get()
-                .extracting(Enlace::getTienda)
+                .extracting(e -> e.getTienda().getNombre())
                 .isEqualTo("algo-mas-cara");
     }
 
@@ -71,18 +74,38 @@ class FiguraTest {
     }
 
     @Test
-    void avisaCuandoLaFechaLimiteEstaCerca() {
+    void avisaCuandoLaFechaLimiteMasProximaEstaCerca() {
         LocalDate hoy = LocalDate.of(2026, 11, 17);
         Figura figura = new Figura("Guerrera escala 1/7", EstadoFigura.PENSANDO_COMPRAR);
+        Enlace lejana = enlace("lejana", "100", null);
+        lejana.setPedirAntesDe(hoy.plusDays(30));
+        Enlace cercana = enlace("cercana", "110", null);
+        cercana.setPedirAntesDe(hoy.plusDays(3));
+        figura.anadirEnlace(lejana);
+        figura.anadirEnlace(cercana);
 
-        figura.setPedirAntesDe(hoy.plusDays(3));
+        assertThat(figura.pedirAntesDe()).contains(hoy.plusDays(3));
         assertThat(figura.fechaLimiteCercana(hoy, 7)).isTrue();
 
-        figura.setPedirAntesDe(hoy.plusDays(30));
+        cercana.setEstado(EstadoEnlace.DESCARTADA);
+        assertThat(figura.pedirAntesDe()).contains(hoy.plusDays(30));
         assertThat(figura.fechaLimiteCercana(hoy, 7)).isFalse();
+    }
 
-        figura.setPedirAntesDe(hoy.minusDays(1));
-        assertThat(figura.fechaLimiteCercana(hoy, 7)).isFalse();
+    @Test
+    void elMejorPrecioIgnoraDescartadasYTiendasNoComprar() {
+        Figura figura = new Figura("Kurisu Wedding Dress", EstadoFigura.PENSANDO_COMPRAR);
+        Enlace normal = enlace("jedishop", "192.42", null);
+        Enlace insolvente = enlace("waifuworld", "180.87", null);
+        insolvente.getTienda().setConfianza(Confianza.NO_COMPRAR);
+        Enlace descartada = enlace("otra", "150.00", null);
+        descartada.setEstado(EstadoEnlace.DESCARTADA);
+        figura.anadirEnlace(normal);
+        figura.anadirEnlace(insolvente);
+        figura.anadirEnlace(descartada);
+
+        assertThat(figura.enlaceMasBarato()).contains(normal);
+        assertThat(figura.tieneTiendaNoComprar()).isTrue();
     }
 
     @Test

@@ -6,6 +6,7 @@ import com.gestorhobbies.api.figuras.FiguraDtos.FiguraRespuesta;
 import com.gestorhobbies.core.figuras.EstadoFigura;
 import com.gestorhobbies.core.figuras.Figura;
 import com.gestorhobbies.core.figuras.FiguraService;
+import com.gestorhobbies.core.tiendas.TiendaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,9 +30,11 @@ import java.util.List;
 public class FiguraController {
 
     private final FiguraService servicio;
+    private final TiendaService tiendas;
 
-    public FiguraController(FiguraService servicio) {
+    public FiguraController(FiguraService servicio, TiendaService tiendas) {
         this.servicio = servicio;
+        this.tiendas = tiendas;
     }
 
     @GetMapping
@@ -46,7 +49,7 @@ public class FiguraController {
 
     @PostMapping
     public ResponseEntity<FiguraRespuesta> crear(@Valid @RequestBody FiguraPeticion peticion) {
-        Figura creada = servicio.guardar(peticion.crear());
+        Figura creada = servicio.guardar(peticion.crear(tiendas::obtener));
         return ResponseEntity.created(URI.create("/api/figuras/" + creada.getId()))
                 .body(FiguraRespuesta.desde(creada));
     }
@@ -54,7 +57,7 @@ public class FiguraController {
     @PutMapping("/{id}")
     public FiguraRespuesta actualizar(@PathVariable Long id, @Valid @RequestBody FiguraPeticion peticion) {
         Figura figura = servicio.obtener(id);
-        peticion.aplicarA(figura);
+        peticion.aplicarA(figura, tiendas::obtener);
         return FiguraRespuesta.desde(servicio.guardar(figura));
     }
 

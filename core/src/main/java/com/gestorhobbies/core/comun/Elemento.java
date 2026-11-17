@@ -92,9 +92,13 @@ public abstract class Elemento {
         }
     }
 
-    /** El enlace con menor precio total (precio + envío), si hay alguno con precio. */
+    /**
+     * El enlace con menor precio total (precio + envío) entre los que tienen precio,
+     * sin contar los descartados ni las tiendas marcadas como "no comprar".
+     */
     public Optional<Enlace> enlaceMasBarato() {
         return enlaces.stream()
+                .filter(Enlace::esOpcionValida)
                 .filter(e -> e.getPrecio() != null)
                 .min(Comparator.comparing(Enlace::total));
     }
