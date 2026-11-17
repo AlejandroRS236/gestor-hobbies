@@ -31,7 +31,8 @@ La lógica vive en `core` y no depende de la interfaz: la API y el frontend se p
 1. Copia `.env.example` como `.env` y rellena los datos de la base de datos, o define las variables `DB_URL`, `DB_USER` y `DB_PASSWORD`.
 2. Backend:
    ```bash
-   mvn -pl api -am spring-boot:run
+   mvn install -DskipTests
+   mvn -pl api spring-boot:run
    ```
    Flyway crea las tablas la primera vez.
 3. Frontend (en otra terminal):
