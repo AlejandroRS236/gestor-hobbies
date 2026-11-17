@@ -15,12 +15,13 @@ import type {
 import { estados, textoEstado } from './tipos';
 
 type Vista = 'figuras' | 'tiendas';
+type Filtro = EstadoFigura | 'TODAS';
 type EdicionFigura = { modo: 'nueva' } | { modo: 'editar'; figura: Figura } | null;
 type EdicionTienda = { tienda: Tienda | null } | null;
 
 export default function App() {
   const [vista, setVista] = useState<Vista>('figuras');
-  const [estado, setEstado] = useState<EstadoFigura>('PENSANDO_COMPRAR');
+  const [estado, setEstado] = useState<Filtro>('TODAS');
   const [figuras, setFiguras] = useState<Figura[]>([]);
   const [tiendas, setTiendas] = useState<Tienda[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +33,7 @@ export default function App() {
 
   const cargarFiguras = useCallback(async () => {
     try {
-      setFiguras(await listarFiguras(estado));
+      setFiguras(await listarFiguras(estado === 'TODAS' ? undefined : estado));
       setError(null);
     } catch (e) {
       setError((e as Error).message);
@@ -62,7 +63,7 @@ export default function App() {
       await crearFigura(datos);
     }
     setEdicionFigura(null);
-    if (datos.estado !== estado) {
+    if (estado !== 'TODAS' && datos.estado !== estado) {
       setEstado(datos.estado);
     } else {
       await cargarFiguras();
@@ -169,6 +170,9 @@ export default function App() {
       {vista === 'figuras' ? (
         <>
           <nav className="pestanas">
+            <button className={estado === 'TODAS' ? 'activa' : ''} onClick={() => setEstado('TODAS')}>
+              Todas
+            </button>
             {estados.map((e) => (
               <button key={e} className={e === estado ? 'activa' : ''} onClick={() => setEstado(e)}>
                 {textoEstado[e]}
@@ -191,7 +195,7 @@ export default function App() {
           key={edicionFigura.modo === 'editar' ? edicionFigura.figura.id : 'nueva'}
           figura={edicionFigura.modo === 'editar' ? edicionFigura.figura : undefined}
           tiendas={tiendas}
-          estadoInicial={estado}
+          estadoInicial={estado === 'TODAS' ? 'PENSANDO_COMPRAR' : estado}
           onGuardar={guardarFigura}
           onCrearTienda={crearTiendaRapida}
           onEliminar={edicionFigura.modo === 'editar' ? () => borrarFigura(edicionFigura.figura) : undefined}

@@ -47,7 +47,7 @@ export function PestanaImagenes({ titulo, imagenes, principal, onCambiarImagenes
               disabled={todas.length < 2}>
               ‹
             </button>
-            <img src={vista} alt={`${titulo}, foto ${indice + 1} de ${todas.length}`} />
+            <img src={vista} referrerPolicy="no-referrer" alt={`${titulo}, foto ${indice + 1} de ${todas.length}`} />
             <button type="button" className="secundario flecha" aria-label="Foto siguiente" onClick={() => mover(1)}
               disabled={todas.length < 2}>
               ›
@@ -72,7 +72,7 @@ export function PestanaImagenes({ titulo, imagenes, principal, onCambiarImagenes
             {todas.map((url, i) => (
               <button type="button" key={url} className={i === indice ? 'activa' : ''}
                 aria-label={`Ver foto ${i + 1}`} onClick={() => setActual(i)}>
-                <img src={url} alt="" loading="lazy" />
+                <img src={url} alt="" loading="lazy" referrerPolicy="no-referrer" />
               </button>
             ))}
           </div>

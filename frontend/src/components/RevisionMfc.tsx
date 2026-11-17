@@ -57,7 +57,7 @@ export function RevisionMfc({ vista, figuras, onConfirmar, onCancelar }: Props) 
         <ul className="lista-revision">
           {vista.candidatos.map((c, i) => (
             <li key={c.mfcId}>
-              <div className="miniatura">{c.imagenUrl && <img src={c.imagenUrl} alt="" />}</div>
+              <div className="miniatura">{c.imagenUrl && <img src={c.imagenUrl} alt="" referrerPolicy="no-referrer" />}</div>
               <div className="datos-revision">
                 <span className="nombre-tienda">{c.titulo}</span>
                 <span className="dato">

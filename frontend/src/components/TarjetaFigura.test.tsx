@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { TarjetaFigura } from './TarjetaFigura';
 import type { Enlace, Figura } from '../tipos';
 import { fichaVacia } from '../tipos';
@@ -49,6 +49,16 @@ describe('TarjetaFigura', () => {
     const ficha = { ...fichaVacia, avisos: 'Warning: a counterfeit version of this item exists.' };
     render(<TarjetaFigura figura={{ ...base, ficha }} />);
     expect(screen.getByText('Existen falsificaciones de esta figura')).toBeInTheDocument();
+  });
+
+  it('si la imagen no carga muestra un hueco en vez del texto alternativo', () => {
+    render(<TarjetaFigura figura={{ ...base, imagenUrl: 'https://img/rota.jpg' }} />);
+    const imagen = screen.getByAltText('Guerrera escala 1/7');
+    expect(imagen).toHaveAttribute('referrerpolicy', 'no-referrer');
+
+    fireEvent.error(imagen);
+    expect(screen.queryByAltText('Guerrera escala 1/7')).not.toBeInTheDocument();
+    expect(screen.getByText('?')).toBeInTheDocument();
   });
 
   it('avisa si alguna tienda está marcada como no comprar', () => {

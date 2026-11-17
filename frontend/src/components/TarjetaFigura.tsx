@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Figura } from '../tipos';
 import { textoEstado } from '../tipos';
 import { formatearEuros, formatearFecha, formatearNota } from '../formato';
@@ -10,6 +11,7 @@ interface Props {
 export function TarjetaFigura({ figura, onAbrir }: Props) {
   const mejorEnlace = figura.enlaces.find((e) => e.id === figura.mejorEnlaceId);
   const reservada = figura.enlaces.find((e) => e.estado === 'RESERVADA');
+  const [imagenRota, setImagenRota] = useState(false);
 
   return (
     <article
@@ -26,7 +28,12 @@ export function TarjetaFigura({ figura, onAbrir }: Props) {
       }}
     >
       <div className="tarjeta-imagen">
-        {figura.imagenUrl ? <img src={figura.imagenUrl} alt={figura.titulo} /> : <span aria-hidden="true">?</span>}
+        {figura.imagenUrl && !imagenRota ? (
+          <img src={figura.imagenUrl} alt={figura.titulo} referrerPolicy="no-referrer" loading="lazy"
+            onError={() => setImagenRota(true)} />
+        ) : (
+          <span aria-hidden="true">?</span>
+        )}
       </div>
       <div className="tarjeta-cuerpo">
         <span className={`chip chip-${figura.estado.toLowerCase()}`}>{textoEstado[figura.estado]}</span>
