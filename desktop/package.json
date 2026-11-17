@@ -1,0 +1,13 @@
+{
+  "name": "gestor-hobbies-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Ventana de escritorio del Gestor de hobbies",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^38.0.0"
+  }
+}

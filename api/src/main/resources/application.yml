@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: gestor-hobbies
+  datasource:
+    # Base de datos compartida (Supabase). Los valores reales van en variables
+    # de entorno o en un archivo .env que NO se sube al repositorio.
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/gestor_hobbies}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: true
+  flyway:
+    enabled: true
+
+server:
+  port: ${PORT:8080}
