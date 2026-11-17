@@ -75,7 +75,7 @@ button:disabled { opacity: 0.6; cursor: default; }
 }
 .modal {
   background: var(--superficie); border: 1px solid var(--borde); border-radius: 12px;
-  width: 100%; max-width: 720px; padding: 20px 24px;
+  width: 100%; max-width: 720px; padding: 20px 24px; box-sizing: border-box;
 }
 .modal h2 { font-weight: 500; margin: 0 0 16px; }
 .modal h3 { font-weight: 500; font-size: 15px; margin: 20px 0 8px; }
@@ -85,9 +85,10 @@ button:disabled { opacity: 0.6; cursor: default; }
 .modal input, .modal select, .modal textarea {
   font: inherit; color: var(--texto); background: var(--fondo);
   border: 1px solid var(--borde); border-radius: 8px; padding: 7px 10px;
+  width: 100%; min-width: 0; box-sizing: border-box;
 }
 .fila-enlace {
-  display: grid; grid-template-columns: 1.2fr 2fr 0.8fr 0.8fr auto; gap: 8px; margin-bottom: 8px;
+  display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) minmax(0, 0.8fr) minmax(0, 0.8fr) auto; gap: 8px; margin-bottom: 8px;
 }
 .acciones { display: flex; gap: 8px; margin-top: 20px; align-items: center; }
 .acciones .espacio { flex: 1; }
