@@ -51,6 +51,9 @@ export function TarjetaFigura({ figura, onAbrir }: Props) {
         )}
         {reservada && <p className="etiqueta-reserva">Reservada en {reservada.tienda}</p>}
         {figura.avisoNoComprar && <p className="aviso">Tiene una tienda marcada como "no comprar"</p>}
+        {figura.ficha?.avisos?.toLowerCase().includes('counterfeit') && (
+          <p className="aviso">Existen falsificaciones de esta figura</p>
+        )}
         {figura.enlaces.length > 1 && <p className="alternativas">{figura.enlaces.length} tiendas</p>}
       </div>
     </article>

@@ -16,7 +16,9 @@ function valorInicial(c: CandidatoMfc) {
 }
 
 function aDecision(c: CandidatoMfc, valor: string): DecisionMfc {
-  const base = { mfcId: c.mfcId, titulo: c.titulo, fabricante: c.fabricante, imagenUrl: c.imagenUrl };
+  const base = {
+    mfcId: c.mfcId, titulo: c.titulo, fabricante: c.fabricante, imagenUrl: c.imagenUrl, jan: c.jan, ficha: c.ficha,
+  };
   if (valor === 'crear') return { ...base, accion: 'CREAR', figuraId: null };
   if (valor === 'omitir') return { ...base, accion: 'OMITIR', figuraId: null };
   return { ...base, accion: 'FUSIONAR', figuraId: Number(valor.slice(2)) };
@@ -59,6 +61,7 @@ export function RevisionMfc({ vista, figuras, onConfirmar, onCancelar }: Props) 
                 <span className="nombre-tienda">{c.titulo}</span>
                 <span className="dato">
                   {c.fabricante}
+                  {c.ficha && ' · con ficha técnica'}
                   {c.yaImportada && ' · ya importada antes'}
                   {!c.yaImportada && c.sugeridaId !== null && ` · parecido ${Math.round(c.parecido * 100)} %`}
                 </span>

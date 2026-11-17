@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { TarjetaFigura } from './TarjetaFigura';
 import type { Enlace, Figura } from '../tipos';
+import { fichaVacia } from '../tipos';
 
 const enlace = (id: number, tienda: string, total: number, extra: Partial<Enlace> = {}): Enlace => ({
   id, tiendaId: id, tienda, confianza: 'FIABLE', url: null, precio: total, envio: 0, total,
@@ -23,6 +24,8 @@ const base: Figura = {
   mejorTotal: 155,
   pedirAntesDe: '2026-11-20',
   avisoNoComprar: false,
+  mfcId: null,
+  ficha: fichaVacia,
 };
 
 describe('TarjetaFigura', () => {
@@ -39,6 +42,12 @@ describe('TarjetaFigura', () => {
     render(<TarjetaFigura figura={base} />);
     expect(screen.getByText('Reservada en Figuya')).toBeInTheDocument();
     expect(screen.getByText('8,7')).toBeInTheDocument();
+  });
+
+  it('avisa si MFC indica que existen falsificaciones', () => {
+    const ficha = { ...fichaVacia, avisos: 'Warning: a counterfeit version of this item exists.' };
+    render(<TarjetaFigura figura={{ ...base, ficha }} />);
+    expect(screen.getByText('Existen falsificaciones de esta figura')).toBeInTheDocument();
   });
 
   it('avisa si alguna tienda está marcada como no comprar', () => {

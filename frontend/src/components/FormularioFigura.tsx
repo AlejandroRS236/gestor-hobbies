@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import type { Enlace, EstadoEnlace, EstadoFigura, Figura, FiguraPeticion, Tienda } from '../tipos';
-import { estados, textoEstado, textoEstadoEnlace } from '../tipos';
+import type { DatosFicha, Enlace, EstadoEnlace, EstadoFigura, Figura, FiguraPeticion, Tienda } from '../tipos';
+import { estados, fichaVacia, textoEstado, textoEstadoEnlace } from '../tipos';
+import { PestanaInformacion } from './PestanaInformacion';
 import { aNumero, aTexto, formatearEuros, formatearFecha, numeroATexto, texto } from '../formato';
 
 interface Props {
@@ -60,6 +61,9 @@ export function FormularioFigura(props: Props) {
   const [nota, setNota] = useState(numeroATexto(figura?.nota));
   const [notas, setNotas] = useState(texto(figura?.notas));
   const [enlaces, setEnlaces] = useState<EnlaceForm[]>(figura?.enlaces.map(desdeEnlace) ?? []);
+  const [ficha, setFicha] = useState<DatosFicha>(figura?.ficha ?? fichaVacia);
+  const [mfcId, setMfcId] = useState(texto(figura?.mfcId));
+  const [pestana, setPestana] = useState<'gestion' | 'informacion'>('gestion');
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
 
@@ -112,6 +116,16 @@ export function FormularioFigura(props: Props) {
       setError('Revisa los precios: deben ser números positivos.');
       return;
     }
+    if (mfcId.trim() !== '' && !/^\d+$/.test(mfcId.trim())) {
+      setPestana('informacion');
+      setError('El número de MyFigureCollection solo lleva cifras.');
+      return;
+    }
+    if (ficha.participantes.some((p) => p.nombre.trim() === '')) {
+      setPestana('informacion');
+      setError('Cada empresa o artista necesita un nombre.');
+      return;
+    }
 
     setGuardando(true);
     setError(null);
@@ -125,6 +139,8 @@ export function FormularioFigura(props: Props) {
         fabricante: aTexto(fabricante),
         jan: aTexto(jan),
         riesgo: aTexto(riesgo),
+        mfcId: aTexto(mfcId),
+        ficha,
         enlaces: enlaces.map((e) => ({
           tiendaId: Number(e.tiendaId),
           url: aTexto(e.url),
@@ -160,6 +176,22 @@ export function FormularioFigura(props: Props) {
       <form className="modal" onSubmit={enviar} onClick={(e) => e.stopPropagation()} aria-label="Formulario de figura">
         <h2>{figura ? 'Editar figura' : 'Nueva figura'}</h2>
 
+        <div className="pestanas-modal" role="tablist">
+          <button type="button" role="tab" aria-selected={pestana === 'gestion'}
+            className={pestana === 'gestion' ? 'activa' : ''} onClick={() => setPestana('gestion')}>
+            Gestión y compra
+          </button>
+          <button type="button" role="tab" aria-selected={pestana === 'informacion'}
+            className={pestana === 'informacion' ? 'activa' : ''} onClick={() => setPestana('informacion')}>
+            Información
+          </button>
+        </div>
+
+        {pestana === 'informacion' && (
+          <PestanaInformacion ficha={ficha} mfcId={mfcId} onCambiarFicha={setFicha} onCambiarMfcId={setMfcId} />
+        )}
+
+        <div hidden={pestana !== 'gestion'}>
         <div className="campos">
           <label className="ancho">
             Nombre
@@ -275,6 +307,7 @@ export function FormularioFigura(props: Props) {
         <button type="button" className="secundario" onClick={() => setEnlaces((a) => [...a, { ...enlaceVacio }])}>
           + Añadir tienda
         </button>
+        </div>
 
         {error && <p className="error" role="alert">{error}</p>}
 

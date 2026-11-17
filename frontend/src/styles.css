@@ -144,3 +144,16 @@ button.enlace { background: none; border: none; color: var(--texto-suave); text-
 .datos-revision { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .miniatura { width: 56px; height: 56px; border-radius: 8px; overflow: hidden; background: var(--fondo); }
 .miniatura img { width: 100%; height: 100%; object-fit: cover; }
+
+.pestanas-modal { display: flex; gap: 4px; border-bottom: 1px solid var(--borde); margin-bottom: 16px; }
+.pestanas-modal button {
+  background: none; border: none; border-bottom: 2px solid transparent; color: var(--texto-suave);
+  font: inherit; padding: 8px 12px; cursor: pointer; margin-bottom: -1px;
+}
+.pestanas-modal button.activa { color: var(--texto); border-bottom-color: var(--texto); }
+.aviso-grande { font-size: 14px; padding: 8px 12px; border: 1px solid #a32d2d; border-radius: 8px; margin-bottom: 12px; }
+.fila-doble { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; margin-bottom: 8px; }
+.fila-lanzamiento {
+  display: grid; gap: 8px; margin-bottom: 8px;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr) minmax(0, 0.8fr) minmax(0, 0.5fr) minmax(0, 1.2fr) auto;
+}

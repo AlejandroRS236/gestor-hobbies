@@ -1,5 +1,6 @@
 package com.gestorhobbies.core.importacion;
 
+import com.gestorhobbies.core.figuras.DatosFicha;
 import com.gestorhobbies.core.figuras.EstadoFigura;
 import com.gestorhobbies.core.figuras.Figura;
 import com.gestorhobbies.core.figuras.FiguraRepository;
@@ -28,6 +29,9 @@ import java.util.regex.Pattern;
  * navegador (Ctrl + S). La web no permite leerla de forma automática, así que
  * se trabaja sobre la copia que guarda el propio usuario.
  *
+ * <p>También admite la página de una figura concreta, de la que se lee además
+ * su ficha técnica (empresas, medidas, lanzamientos...).</p>
+ *
  * <p>Se hace en dos pasos: {@link #previsualizar} lee la página y sugiere qué
  * figuras ya existen con otro nombre; {@link #aplicar} guarda lo que el
  * usuario haya confirmado. La pestaña decide el estado de las figuras nuevas:
@@ -46,17 +50,26 @@ public class ImportadorMfc {
     private static final Pattern PREFIJO = Pattern.compile("^\\[[^\\]]*\\]\\s*-\\s*");
     private static final Pattern ESTADO_EN_URL = Pattern.compile("[?&]status=(\\d)");
 
-    /** Una figura leída de MFC, con la figura existente que parece ser (si la hay). */
-    public record Candidato(String mfcId, String titulo, String fabricante, String imagenUrl,
-                            Long sugeridaId, String sugeridaTitulo, double parecido, boolean yaImportada) {
+    /**
+     * Una figura leída de MFC, con la figura existente que parece ser (si la hay).
+     * Si viene de la página de la propia figura, trae además su ficha técnica.
+     */
+    public record Candidato(String mfcId, String titulo, String fabricante, String imagenUrl, String jan,
+                            DatosFicha ficha, Long sugeridaId, String sugeridaTitulo, double parecido,
+                            boolean yaImportada) {
+
+        Candidato conSugerencia(Figura figura, double parecido, boolean yaImportada) {
+            return new Candidato(mfcId, titulo, fabricante, imagenUrl, jan, ficha,
+                    figura.getId(), figura.getTitulo(), parecido, yaImportada);
+        }
     }
 
     public record Previsualizacion(EstadoFigura estado, List<Candidato> candidatos) {
     }
 
     /** Qué hacer con cada figura: crearla, fusionarla con una existente u omitirla. */
-    public record Decision(String mfcId, String titulo, String fabricante, String imagenUrl,
-                           Accion accion, Long figuraId) {
+    public record Decision(String mfcId, String titulo, String fabricante, String imagenUrl, String jan,
+                           DatosFicha ficha, Accion accion, Long figuraId) {
     }
 
     public enum Accion { CREAR, FUSIONAR, OMITIR }
@@ -70,6 +83,12 @@ public class ImportadorMfc {
     @Transactional(readOnly = true)
     public Previsualizacion previsualizar(InputStream html) throws IOException {
         Document pagina = Jsoup.parse(html, StandardCharsets.UTF_8.name(), "https://myfigurecollection.net/");
+        if (LectorFichaMfc.esPaginaDeFigura(pagina)) {
+            LectorFichaMfc.FichaMfc f = LectorFichaMfc.leer(pagina);
+            Candidato candidato = new Candidato(f.mfcId(), f.titulo(), f.fabricante(), f.imagenUrl(), f.jan(),
+                    f.ficha(), null, null, 0, false);
+            return new Previsualizacion(EstadoFigura.ME_GUSTA, emparejar(List.of(candidato), figuras.findAll()));
+        }
         List<Candidato> leidos = leer(pagina);
         if (leidos.isEmpty()) {
             throw new IllegalArgumentException(
@@ -91,7 +110,11 @@ public class ImportadorMfc {
                     Figura figura = new Figura(d.titulo(), estado);
                     figura.setFabricante(d.fabricante());
                     figura.setImagenUrl(d.imagenUrl());
-                    figura.setNotas("MyFigureCollection: " + URL_ITEM + d.mfcId());
+                    figura.setMfcId(d.mfcId());
+                    figura.setJan(d.jan());
+                    if (d.ficha() != null) {
+                        figura.aplicarFicha(d.ficha());
+                    }
                     figuras.save(figura);
                     creadas++;
                 }
@@ -112,7 +135,11 @@ public class ImportadorMfc {
         return new ResultadoImportacion(creadas, omitidas, 0, List.copyOf(avisos));
     }
 
-    /** Completa una figura existente sin pisar nada de lo que ya tenía. */
+    /**
+     * Completa una figura existente sin pisar sus datos de gestión: solo rellena
+     * lo que esté vacío. La ficha técnica sí se sustituye, porque la de MFC es
+     * la fuente de referencia.
+     */
     private static void fusionar(Figura figura, Decision d) {
         if (figura.getImagenUrl() == null) {
             figura.setImagenUrl(d.imagenUrl());
@@ -120,10 +147,12 @@ public class ImportadorMfc {
         if (figura.getFabricante() == null) {
             figura.setFabricante(d.fabricante());
         }
-        String enlace = URL_ITEM + d.mfcId();
-        String notas = figura.getNotas();
-        if (notas == null || !notas.contains(enlace)) {
-            figura.setNotas((notas == null ? "" : notas + "\n") + "MyFigureCollection: " + enlace);
+        if (figura.getJan() == null) {
+            figura.setJan(d.jan());
+        }
+        figura.setMfcId(d.mfcId());
+        if (d.ficha() != null) {
+            figura.aplicarFicha(d.ficha());
         }
     }
 
@@ -142,7 +171,7 @@ public class ImportadorMfc {
             String titulo = PREFIJO.matcher(FABRICANTE.matcher(nombreMfc).replaceFirst("")).replaceFirst("").strip();
             if (!titulo.isEmpty()) {
                 leidos.add(new Candidato(id.group(1), titulo, nombreFabricante, urlImagen(imagen.attr("src")),
-                        null, null, 0, false));
+                        null, null, null, null, 0, false));
             }
         }
         return leidos;
@@ -161,9 +190,11 @@ public class ImportadorMfc {
         Set<Integer> yaImportados = new HashSet<>();
 
         for (int i = 0; i < leidos.size(); i++) {
-            String enlace = URL_ITEM + leidos.get(i).mfcId();
+            String mfcId = leidos.get(i).mfcId();
+            String enlace = URL_ITEM + mfcId;
             for (Figura f : existentes) {
-                boolean mismoEnlace = f.getNotas() != null && f.getNotas().contains(enlace);
+                boolean mismoEnlace = mfcId.equals(f.getMfcId())
+                        || (f.getNotas() != null && f.getNotas().contains(enlace));
                 if (mismoEnlace || f.getTitulo().equalsIgnoreCase(leidos.get(i).titulo())) {
                     elegidos.put(i, new Par(i, f, 1.0));
                     figurasUsadas.add(f.getId());
@@ -179,6 +210,9 @@ public class ImportadorMfc {
                 continue;
             }
             for (Figura f : existentes) {
+                if (f.getMfcId() != null) {
+                    continue; // Ya está enlazada con otra figura de MFC: no puede ser esta.
+                }
                 double parecido = Similitud.entre(leidos.get(i).titulo(), f.getTitulo());
                 if (parecido >= UMBRAL_SUGERENCIA) {
                     pares.add(new Par(i, f, parecido));
@@ -197,8 +231,7 @@ public class ImportadorMfc {
         for (int i = 0; i < leidos.size(); i++) {
             Candidato c = leidos.get(i);
             Par par = elegidos.get(i);
-            resultado.add(par == null ? c : new Candidato(c.mfcId(), c.titulo(), c.fabricante(), c.imagenUrl(),
-                    par.figura().getId(), par.figura().getTitulo(), par.parecido(), yaImportados.contains(i)));
+            resultado.add(par == null ? c : c.conSugerencia(par.figura(), par.parecido(), yaImportados.contains(i)));
         }
         return resultado;
     }
@@ -218,9 +251,9 @@ public class ImportadorMfc {
         return EstadoFigura.ME_GUSTA;
     }
 
-    /** Las imágenes guardadas apuntan a disco; se rehace la dirección original en tamaño grande. */
+    /** Las imágenes guardadas apuntan a disco; se rehace la dirección original (tamaño mediano). */
     private static String urlImagen(String src) {
         Matcher m = IMAGEN.matcher(src);
-        return m.find() ? "https://static.myfigurecollection.net/upload/items/2/" + m.group(1) : null;
+        return m.find() ? "https://static.myfigurecollection.net/upload/items/1/" + m.group(1) : null;
     }
 }

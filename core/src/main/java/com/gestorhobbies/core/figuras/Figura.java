@@ -3,14 +3,21 @@ package com.gestorhobbies.core.figuras;
 import com.gestorhobbies.core.comun.Elemento;
 import com.gestorhobbies.core.comun.Enlace;
 import com.gestorhobbies.core.tiendas.Confianza;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -29,6 +36,23 @@ public class Figura extends Elemento {
     private String jan;
 
     private String riesgo;
+
+    /** Número de la figura en MyFigureCollection, si se ha importado de allí. */
+    @Column(name = "mfc_id", length = 20)
+    private String mfcId;
+
+    @Embedded
+    private FichaTecnica ficha;
+
+    @ElementCollection
+    @CollectionTable(name = "figura_participante", joinColumns = @JoinColumn(name = "figura_id"))
+    @OrderColumn(name = "orden")
+    private List<Participante> participantes = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "figura_lanzamiento", joinColumns = @JoinColumn(name = "figura_id"))
+    @OrderColumn(name = "orden")
+    private List<Lanzamiento> lanzamientos = new ArrayList<>();
 
     protected Figura() {
         // JPA
@@ -62,6 +86,38 @@ public class Figura extends Elemento {
     /** Si alguna de sus tiendas está marcada como "no comprar". */
     public boolean tieneTiendaNoComprar() {
         return getEnlaces().stream().anyMatch(e -> e.getTienda().getConfianza() == Confianza.NO_COMPRAR);
+    }
+
+    /** Sustituye la ficha técnica completa (datos, participantes y lanzamientos). */
+    public void aplicarFicha(DatosFicha datos) {
+        Objects.requireNonNull(datos, "datos");
+        ficha = new FichaTecnica(datos.categoria(), datos.serie(), datos.personaje(), datos.version(),
+                datos.escala(), datos.alturaMm(), datos.pesoG(), datos.materiales(), datos.avisos());
+        participantes.clear();
+        datos.participantes().forEach(p -> participantes.add(new Participante(p.nombre(), p.rol())));
+        lanzamientos.clear();
+        datos.lanzamientos().forEach(l ->
+                lanzamientos.add(new Lanzamiento(l.fecha(), l.edicion(), l.precio(), l.moneda(), l.jan())));
+    }
+
+    public DatosFicha datosFicha() {
+        FichaTecnica f = ficha == null ? new FichaTecnica() : ficha;
+        return new DatosFicha(f.getCategoria(), f.getSerie(), f.getPersonaje(), f.getVersion(), f.getEscala(),
+                f.getAlturaMm(), f.getPesoG(), f.getMateriales(), f.getAvisos(),
+                participantes.stream().map(p -> new DatosFicha.DatosParticipante(p.getNombre(), p.getRol())).toList(),
+                lanzamientos.stream().map(l -> new DatosFicha.DatosLanzamiento(
+                        l.getFecha(), l.getEdicion(), l.getPrecio(), l.getMoneda(), l.getJan())).toList());
+    }
+
+    public String getMfcId() {
+        return mfcId;
+    }
+
+    public void setMfcId(String mfcId) {
+        if (mfcId != null && !mfcId.isBlank() && !mfcId.strip().matches("\\d+")) {
+            throw new IllegalArgumentException("El número de MyFigureCollection solo lleva cifras");
+        }
+        this.mfcId = mfcId == null || mfcId.isBlank() ? null : mfcId.strip();
     }
 
     public EstadoFigura getEstado() {

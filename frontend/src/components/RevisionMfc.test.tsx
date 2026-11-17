@@ -3,7 +3,7 @@ import { RevisionMfc } from './RevisionMfc';
 import type { CandidatoMfc, Figura } from '../tipos';
 
 const candidato = (mfcId: string, titulo: string, extra: Partial<CandidatoMfc> = {}): CandidatoMfc => ({
-  mfcId, titulo, fabricante: 'Taito', imagenUrl: null, sugeridaId: null, sugeridaTitulo: null,
+  mfcId, titulo, fabricante: 'Taito', imagenUrl: null, jan: null, ficha: null, sugeridaId: null, sugeridaTitulo: null,
   parecido: 0, yaImportada: false, ...extra,
 });
 

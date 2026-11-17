@@ -53,6 +53,24 @@ describe('FormularioFigura', () => {
     });
   });
 
+  it('guarda la ficha técnica editada en la pestaña Información', async () => {
+    const onGuardar = renderizar();
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Shiro 1/7' } });
+    fireEvent.click(screen.getByRole('tab', { name: 'Información' }));
+    fireEvent.change(screen.getByLabelText('Altura (mm)'), { target: { value: '155' } });
+    fireEvent.change(screen.getByLabelText('Nº en MyFigureCollection'), { target: { value: '218050' } });
+    fireEvent.click(screen.getByRole('button', { name: '+ Añadir empresa o artista' }));
+    fireEvent.change(screen.getByLabelText('Nombre del participante'), { target: { value: 'Kotobukiya' } });
+    fireEvent.change(screen.getByLabelText('Papel'), { target: { value: 'Fabricante' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+
+    await waitFor(() => expect(onGuardar).toHaveBeenCalledTimes(1));
+    const datos: FiguraPeticion = onGuardar.mock.calls[0][0];
+    expect(datos.mfcId).toBe('218050');
+    expect(datos.ficha.alturaMm).toBe(155);
+    expect(datos.ficha.participantes).toEqual([{ nombre: 'Kotobukiya', rol: 'Fabricante' }]);
+  });
+
   it('pide elegir la tienda de cada fila', async () => {
     const onGuardar = renderizar();
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Maga' } });

@@ -56,6 +56,38 @@ export interface Enlace {
   comprobadoEl: string | null;
 }
 
+export interface DatosParticipante {
+  nombre: string;
+  rol: string | null;
+}
+
+export interface DatosLanzamiento {
+  fecha: string | null;
+  edicion: string | null;
+  precio: number | null;
+  moneda: string | null;
+  jan: string | null;
+}
+
+export interface DatosFicha {
+  categoria: string | null;
+  serie: string | null;
+  personaje: string | null;
+  version: string | null;
+  escala: string | null;
+  alturaMm: number | null;
+  pesoG: number | null;
+  materiales: string | null;
+  avisos: string | null;
+  participantes: DatosParticipante[];
+  lanzamientos: DatosLanzamiento[];
+}
+
+export const fichaVacia: DatosFicha = {
+  categoria: null, serie: null, personaje: null, version: null, escala: null, alturaMm: null, pesoG: null,
+  materiales: null, avisos: null, participantes: [], lanzamientos: [],
+};
+
 export interface Figura {
   id: number;
   titulo: string;
@@ -71,6 +103,8 @@ export interface Figura {
   mejorTotal: number | null;
   pedirAntesDe: string | null;
   avisoNoComprar: boolean;
+  mfcId: string | null;
+  ficha: DatosFicha;
 }
 
 export interface EnlacePeticion {
@@ -96,6 +130,8 @@ export interface FiguraPeticion {
   jan: string | null;
   riesgo: string | null;
   enlaces: EnlacePeticion[];
+  mfcId: string | null;
+  ficha: DatosFicha;
 }
 
 export interface ResultadoImportacion {
@@ -110,6 +146,8 @@ export interface CandidatoMfc {
   titulo: string;
   fabricante: string | null;
   imagenUrl: string | null;
+  jan: string | null;
+  ficha: DatosFicha | null;
   sugeridaId: number | null;
   sugeridaTitulo: string | null;
   parecido: number;
@@ -128,6 +166,8 @@ export interface DecisionMfc {
   titulo: string;
   fabricante: string | null;
   imagenUrl: string | null;
+  jan: string | null;
+  ficha: DatosFicha | null;
   accion: AccionMfc;
   figuraId: number | null;
 }

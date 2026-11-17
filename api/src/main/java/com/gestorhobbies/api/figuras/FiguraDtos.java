@@ -2,6 +2,7 @@ package com.gestorhobbies.api.figuras;
 
 import com.gestorhobbies.core.comun.Enlace;
 import com.gestorhobbies.core.comun.EstadoEnlace;
+import com.gestorhobbies.core.figuras.DatosFicha;
 import com.gestorhobbies.core.figuras.EstadoFigura;
 import com.gestorhobbies.core.figuras.Figura;
 import com.gestorhobbies.core.tiendas.Confianza;
@@ -41,7 +42,7 @@ public final class FiguraDtos {
     public record FiguraRespuesta(Long id, String titulo, String imagenUrl, BigDecimal nota, String notas,
                                   EstadoFigura estado, String fabricante, String jan, String riesgo,
                                   List<EnlaceRespuesta> enlaces, Long mejorEnlaceId, BigDecimal mejorTotal,
-                                  LocalDate pedirAntesDe, boolean avisoNoComprar) {
+                                  LocalDate pedirAntesDe, boolean avisoNoComprar, String mfcId, DatosFicha ficha) {
 
         static FiguraRespuesta desde(Figura f) {
             Enlace mejor = f.enlaceMasBarato().orElse(null);
@@ -51,7 +52,9 @@ public final class FiguraDtos {
                     mejor == null ? null : mejor.getId(),
                     mejor == null ? null : mejor.total(),
                     f.pedirAntesDe().orElse(null),
-                    f.tieneTiendaNoComprar());
+                    f.tieneTiendaNoComprar(),
+                    f.getMfcId(),
+                    f.datosFicha());
         }
     }
 
@@ -86,7 +89,9 @@ public final class FiguraDtos {
                                  String fabricante,
                                  String jan,
                                  String riesgo,
-                                 List<@Valid EnlacePeticion> enlaces) {
+                                 List<@Valid EnlacePeticion> enlaces,
+                                 String mfcId,
+                                 DatosFicha ficha) {
 
         Figura crear(LongFunction<Tienda> tiendas) {
             Figura figura = new Figura(titulo, estado);
@@ -103,6 +108,10 @@ public final class FiguraDtos {
             figura.setFabricante(fabricante);
             figura.setJan(jan);
             figura.setRiesgo(riesgo);
+            figura.setMfcId(mfcId);
+            if (ficha != null) {
+                figura.aplicarFicha(ficha);
+            }
 
             List.copyOf(figura.getEnlaces()).forEach(figura::quitarEnlace);
             if (enlaces != null) {
