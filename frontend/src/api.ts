@@ -50,8 +50,10 @@ export function eliminarTienda(id: number): Promise<void> {
   return pedir<void>(`/api/tiendas/${id}`, { method: 'DELETE' });
 }
 
-export function importarExcel(archivo: File): Promise<ResultadoImportacion> {
+/** Importa un Excel de figuras o una página de colección de MyFigureCollection guardada (.html). */
+export function importarArchivo(archivo: File): Promise<ResultadoImportacion> {
   const datos = new FormData();
   datos.append('archivo', archivo);
-  return pedir<ResultadoImportacion>('/api/importar/excel', { method: 'POST', body: datos });
+  const tipo = /\.html?$/i.test(archivo.name) ? 'mfc' : 'excel';
+  return pedir<ResultadoImportacion>(`/api/importar/${tipo}`, { method: 'POST', body: datos });
 }

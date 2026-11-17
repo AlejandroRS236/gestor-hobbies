@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import {
-  actualizarFigura, crearFigura, eliminarFigura, eliminarTienda, guardarTienda, importarExcel,
+  actualizarFigura, crearFigura, eliminarFigura, eliminarTienda, guardarTienda, importarArchivo,
   listarFiguras, listarTiendas,
 } from './api';
 import { FormularioFigura } from './components/FormularioFigura';
@@ -98,8 +98,9 @@ export default function App() {
     if (!archivo) return;
     setMensaje('Importando…');
     try {
-      const r = await importarExcel(archivo);
-      const partes = [`${r.figurasCreadas} figuras importadas`, `${r.tiendasCreadas} tiendas nuevas`];
+      const r = await importarArchivo(archivo);
+      const partes = [`${r.figurasCreadas} figuras importadas`];
+      if (r.tiendasCreadas > 0) partes.push(`${r.tiendasCreadas} tiendas nuevas`);
       if (r.figurasOmitidas > 0) partes.push(`${r.figurasOmitidas} ya existían y no se han tocado`);
       setMensaje(partes.join(', ') + '.' + (r.avisos.length ? ` Avisos: ${r.avisos.join(' · ')}` : ''));
       await Promise.all([cargarFiguras(), cargarTiendas()]);
@@ -122,9 +123,9 @@ export default function App() {
         </nav>
         <div className="botones">
           <button className="secundario" onClick={() => selectorExcel.current?.click()}>
-            Importar Excel
+            Importar
           </button>
-          <input ref={selectorExcel} type="file" accept=".xlsx" hidden onChange={alElegirExcel} />
+          <input ref={selectorExcel} type="file" accept=".xlsx,.html,.htm" hidden onChange={alElegirExcel} />
           {vista === 'figuras' ? (
             <button className="principal" onClick={() => setEdicionFigura({ modo: 'nueva' })}>
               + Añadir figura
