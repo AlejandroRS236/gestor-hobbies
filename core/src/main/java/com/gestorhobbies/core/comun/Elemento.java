@@ -1,15 +1,19 @@
 package com.gestorhobbies.core.comun;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
+import jakarta.persistence.OrderColumn;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -44,6 +48,13 @@ public abstract class Elemento {
 
     @Column(name = "imagen_url", length = 2048)
     private String imagenUrl;
+
+    /** Galería: todas las fotos del elemento (la principal es {@link #imagenUrl}). */
+    @ElementCollection
+    @CollectionTable(name = "elemento_imagen", joinColumns = @JoinColumn(name = "elemento_id"))
+    @OrderColumn(name = "orden")
+    @Column(name = "url", length = 2048, nullable = false)
+    private List<String> imagenes = new ArrayList<>();
 
     @Column(precision = 3, scale = 1)
     private BigDecimal nota;
@@ -124,6 +135,30 @@ public abstract class Elemento {
 
     public void setImagenUrl(String imagenUrl) {
         this.imagenUrl = imagenUrl;
+    }
+
+    public List<String> getImagenes() {
+        return Collections.unmodifiableList(imagenes);
+    }
+
+    /** Sustituye la galería, quitando vacíos y repetidos y conservando el orden. */
+    public void setImagenes(List<String> nuevas) {
+        imagenes.clear();
+        if (nuevas != null) {
+            nuevas.stream()
+                    .filter(Objects::nonNull)
+                    .map(String::strip)
+                    .filter(url -> !url.isEmpty())
+                    .distinct()
+                    .forEach(imagenes::add);
+        }
+    }
+
+    /** Añade a la galería las imágenes que todavía no tenga. */
+    public void anadirImagenes(List<String> nuevas) {
+        List<String> todas = new ArrayList<>(imagenes);
+        todas.addAll(nuevas);
+        setImagenes(todas);
     }
 
     public BigDecimal getNota() {

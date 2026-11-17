@@ -17,7 +17,8 @@ function valorInicial(c: CandidatoMfc) {
 
 function aDecision(c: CandidatoMfc, valor: string): DecisionMfc {
   const base = {
-    mfcId: c.mfcId, titulo: c.titulo, fabricante: c.fabricante, imagenUrl: c.imagenUrl, jan: c.jan, ficha: c.ficha,
+    mfcId: c.mfcId, titulo: c.titulo, fabricante: c.fabricante, imagenUrl: c.imagenUrl, imagenes: c.imagenes, jan: c.jan,
+    ficha: c.ficha,
   };
   if (valor === 'crear') return { ...base, accion: 'CREAR', figuraId: null };
   if (valor === 'omitir') return { ...base, accion: 'OMITIR', figuraId: null };
@@ -62,6 +63,7 @@ export function RevisionMfc({ vista, figuras, onConfirmar, onCancelar }: Props) 
                 <span className="dato">
                   {c.fabricante}
                   {c.ficha && ' · con ficha técnica'}
+                  {c.imagenes && c.imagenes.length > 1 && ` · ${c.imagenes.length} fotos`}
                   {c.yaImportada && ' · ya importada antes'}
                   {!c.yaImportada && c.sugeridaId !== null && ` · parecido ${Math.round(c.parecido * 100)} %`}
                 </span>

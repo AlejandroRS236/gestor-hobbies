@@ -109,6 +109,16 @@ class FiguraTest {
     }
 
     @Test
+    void laGaleriaQuitaVaciosYRepetidosYAnadeSoloLasNuevas() {
+        Figura figura = new Figura("Shiro 1/7", EstadoFigura.ME_GUSTA);
+        figura.setImagenes(java.util.Arrays.asList("https://a.jpg", " ", null, "https://a.jpg", "https://b.jpg"));
+        assertThat(figura.getImagenes()).containsExactly("https://a.jpg", "https://b.jpg");
+
+        figura.anadirImagenes(java.util.List.of("https://b.jpg", "https://c.jpg"));
+        assertThat(figura.getImagenes()).containsExactly("https://a.jpg", "https://b.jpg", "https://c.jpg");
+    }
+
+    @Test
     void elTituloNoPuedeEstarVacio() {
         assertThatThrownBy(() -> new Figura("  ", EstadoFigura.ME_GUSTA))
                 .isInstanceOf(IllegalArgumentException.class);

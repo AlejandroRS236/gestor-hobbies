@@ -54,12 +54,12 @@ public class ImportadorMfc {
      * Una figura leída de MFC, con la figura existente que parece ser (si la hay).
      * Si viene de la página de la propia figura, trae además su ficha técnica.
      */
-    public record Candidato(String mfcId, String titulo, String fabricante, String imagenUrl, String jan,
-                            DatosFicha ficha, Long sugeridaId, String sugeridaTitulo, double parecido,
-                            boolean yaImportada) {
+    public record Candidato(String mfcId, String titulo, String fabricante, String imagenUrl,
+                            List<String> imagenes, String jan, DatosFicha ficha,
+                            Long sugeridaId, String sugeridaTitulo, double parecido, boolean yaImportada) {
 
         Candidato conSugerencia(Figura figura, double parecido, boolean yaImportada) {
-            return new Candidato(mfcId, titulo, fabricante, imagenUrl, jan, ficha,
+            return new Candidato(mfcId, titulo, fabricante, imagenUrl, imagenes, jan, ficha,
                     figura.getId(), figura.getTitulo(), parecido, yaImportada);
         }
     }
@@ -68,8 +68,8 @@ public class ImportadorMfc {
     }
 
     /** Qué hacer con cada figura: crearla, fusionarla con una existente u omitirla. */
-    public record Decision(String mfcId, String titulo, String fabricante, String imagenUrl, String jan,
-                           DatosFicha ficha, Accion accion, Long figuraId) {
+    public record Decision(String mfcId, String titulo, String fabricante, String imagenUrl,
+                           List<String> imagenes, String jan, DatosFicha ficha, Accion accion, Long figuraId) {
     }
 
     public enum Accion { CREAR, FUSIONAR, OMITIR }
@@ -85,8 +85,8 @@ public class ImportadorMfc {
         Document pagina = Jsoup.parse(html, StandardCharsets.UTF_8.name(), "https://myfigurecollection.net/");
         if (LectorFichaMfc.esPaginaDeFigura(pagina)) {
             LectorFichaMfc.FichaMfc f = LectorFichaMfc.leer(pagina);
-            Candidato candidato = new Candidato(f.mfcId(), f.titulo(), f.fabricante(), f.imagenUrl(), f.jan(),
-                    f.ficha(), null, null, 0, false);
+            Candidato candidato = new Candidato(f.mfcId(), f.titulo(), f.fabricante(), f.imagenUrl(),
+                    f.imagenes(), f.jan(), f.ficha(), null, null, 0, false);
             return new Previsualizacion(EstadoFigura.ME_GUSTA, emparejar(List.of(candidato), figuras.findAll()));
         }
         List<Candidato> leidos = leer(pagina);
@@ -110,6 +110,7 @@ public class ImportadorMfc {
                     Figura figura = new Figura(d.titulo(), estado);
                     figura.setFabricante(d.fabricante());
                     figura.setImagenUrl(d.imagenUrl());
+                    figura.setImagenes(d.imagenes());
                     figura.setMfcId(d.mfcId());
                     figura.setJan(d.jan());
                     if (d.ficha() != null) {
@@ -150,6 +151,9 @@ public class ImportadorMfc {
         if (figura.getJan() == null) {
             figura.setJan(d.jan());
         }
+        if (d.imagenes() != null) {
+            figura.anadirImagenes(d.imagenes());
+        }
         figura.setMfcId(d.mfcId());
         if (d.ficha() != null) {
             figura.aplicarFicha(d.ficha());
@@ -171,7 +175,7 @@ public class ImportadorMfc {
             String titulo = PREFIJO.matcher(FABRICANTE.matcher(nombreMfc).replaceFirst("")).replaceFirst("").strip();
             if (!titulo.isEmpty()) {
                 leidos.add(new Candidato(id.group(1), titulo, nombreFabricante, urlImagen(imagen.attr("src")),
-                        null, null, null, null, 0, false));
+                        null, null, null, null, null, 0, false));
             }
         }
         return leidos;
@@ -251,9 +255,9 @@ public class ImportadorMfc {
         return EstadoFigura.ME_GUSTA;
     }
 
-    /** Las imágenes guardadas apuntan a disco; se rehace la dirección original (tamaño mediano). */
+    /** Las imágenes guardadas apuntan a disco; se rehace la dirección original en tamaño grande. */
     private static String urlImagen(String src) {
         Matcher m = IMAGEN.matcher(src);
-        return m.find() ? "https://static.myfigurecollection.net/upload/items/1/" + m.group(1) : null;
+        return m.find() ? "https://static.myfigurecollection.net/upload/items/2/" + m.group(1) : null;
     }
 }

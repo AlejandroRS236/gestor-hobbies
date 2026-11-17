@@ -92,6 +92,7 @@ export interface Figura {
   id: number;
   titulo: string;
   imagenUrl: string | null;
+  imagenes: string[];
   nota: number | null;
   notas: string | null;
   estado: EstadoFigura;
@@ -124,6 +125,7 @@ export interface FiguraPeticion {
   titulo: string;
   estado: EstadoFigura;
   imagenUrl: string | null;
+  imagenes: string[];
   nota: number | null;
   notas: string | null;
   fabricante: string | null;
@@ -146,6 +148,7 @@ export interface CandidatoMfc {
   titulo: string;
   fabricante: string | null;
   imagenUrl: string | null;
+  imagenes: string[] | null;
   jan: string | null;
   ficha: DatosFicha | null;
   sugeridaId: number | null;
@@ -166,6 +169,7 @@ export interface DecisionMfc {
   titulo: string;
   fabricante: string | null;
   imagenUrl: string | null;
+  imagenes: string[] | null;
   jan: string | null;
   ficha: DatosFicha | null;
   accion: AccionMfc;

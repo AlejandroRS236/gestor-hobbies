@@ -7,6 +7,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.math.BigDecimal;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -18,7 +20,8 @@ import java.util.stream.Collectors;
 final class LectorFichaMfc {
 
     /** Lo leído de la página: identificación de la figura y su ficha técnica. */
-    record FichaMfc(String mfcId, String titulo, String fabricante, String imagenUrl, String jan, DatosFicha ficha) {
+    record FichaMfc(String mfcId, String titulo, String fabricante, String imagenUrl, List<String> imagenes,
+                    String jan, DatosFicha ficha) {
     }
 
     private static final Pattern ID_ITEM = Pattern.compile("/item/(\\d+)");
@@ -27,6 +30,7 @@ final class LectorFichaMfc {
     private static final Pattern ALTURA = Pattern.compile("H=\\s*(\\d+)\\s*mm");
     private static final Pattern FABRICANTE = Pattern.compile("\\s*\\(([^()]*)\\)\\s*$");
     private static final Pattern PREFIJO = Pattern.compile("^\\[[^\\]]*\\]\\s*-\\s*");
+    private static final Pattern FOTO = Pattern.compile("\"src\"\\s*:\\s*\"([^\"]+)\"");
 
     private LectorFichaMfc() {
     }
@@ -99,11 +103,28 @@ final class LectorFichaMfc {
                 .orElse(null);
         String jan = lanzamientos.stream().map(DatosLanzamiento::jan).filter(j -> j != null).findFirst().orElse(null);
         Element imagen = pagina.selectFirst("meta[property='og:image']");
+        List<String> galeria = galeria(pagina);
+        String principal = !galeria.isEmpty() ? galeria.get(0) : imagen == null ? null : imagen.attr("content");
 
         DatosFicha ficha = new DatosFicha(categoria, vacioANull(String.join(", ", series)),
                 vacioANull(String.join(", ", personajes)), version, escala, altura, null, materiales, avisos,
                 participantes, lanzamientos);
-        return new FichaMfc(mfcId, titulo, fabricante, imagen == null ? null : imagen.attr("content"), jan, ficha);
+        return new FichaMfc(mfcId, titulo, fabricante, principal, galeria, jan, ficha);
+    }
+
+    /** La galería oficial va en un meta "pictures" con una lista JSON codificada como URL. */
+    private static List<String> galeria(Document pagina) {
+        Element meta = pagina.selectFirst("meta[name=pictures]");
+        if (meta == null) {
+            return List.of();
+        }
+        String json = URLDecoder.decode(meta.attr("content"), StandardCharsets.UTF_8);
+        List<String> fotos = new ArrayList<>();
+        Matcher m = FOTO.matcher(json);
+        while (m.find()) {
+            fotos.add(m.group(1).replace("\\/", "/"));
+        }
+        return fotos.stream().distinct().toList();
     }
 
     private static Optional<String> idDeFigura(Document pagina) {

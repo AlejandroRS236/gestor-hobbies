@@ -39,14 +39,16 @@ public final class FiguraDtos {
         }
     }
 
-    public record FiguraRespuesta(Long id, String titulo, String imagenUrl, BigDecimal nota, String notas,
+    public record FiguraRespuesta(Long id, String titulo, String imagenUrl, List<String> imagenes,
+                                  BigDecimal nota, String notas,
                                   EstadoFigura estado, String fabricante, String jan, String riesgo,
                                   List<EnlaceRespuesta> enlaces, Long mejorEnlaceId, BigDecimal mejorTotal,
                                   LocalDate pedirAntesDe, boolean avisoNoComprar, String mfcId, DatosFicha ficha) {
 
         static FiguraRespuesta desde(Figura f) {
             Enlace mejor = f.enlaceMasBarato().orElse(null);
-            return new FiguraRespuesta(f.getId(), f.getTitulo(), f.getImagenUrl(), f.getNota(), f.getNotas(),
+            return new FiguraRespuesta(f.getId(), f.getTitulo(), f.getImagenUrl(), f.getImagenes(),
+                    f.getNota(), f.getNotas(),
                     f.getEstado(), f.getFabricante(), f.getJan(), f.getRiesgo(),
                     f.getEnlaces().stream().map(EnlaceRespuesta::desde).toList(),
                     mejor == null ? null : mejor.getId(),
@@ -84,6 +86,7 @@ public final class FiguraDtos {
     public record FiguraPeticion(@NotBlank String titulo,
                                  @NotNull EstadoFigura estado,
                                  String imagenUrl,
+                                 List<String> imagenes,
                                  @DecimalMin("0.0") @DecimalMax("10.0") BigDecimal nota,
                                  String notas,
                                  String fabricante,
@@ -103,6 +106,7 @@ public final class FiguraDtos {
             figura.setTitulo(titulo);
             figura.cambiarEstado(estado);
             figura.setImagenUrl(imagenUrl);
+            figura.setImagenes(imagenes);
             figura.setNota(nota);
             figura.setNotas(notas);
             figura.setFabricante(fabricante);

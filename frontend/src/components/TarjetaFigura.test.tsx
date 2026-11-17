@@ -13,6 +13,7 @@ const base: Figura = {
   id: 1,
   titulo: 'Guerrera escala 1/7',
   imagenUrl: null,
+  imagenes: [],
   nota: 8.7,
   notas: null,
   estado: 'PENSANDO_COMPRAR',

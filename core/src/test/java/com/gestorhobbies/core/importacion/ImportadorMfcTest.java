@@ -87,7 +87,7 @@ class ImportadorMfcTest {
         Candidato roy = vista.candidatos().get(0);
         assertThat(roy.titulo()).isEqualTo("Hagane no Renkinjutsushi Fullmetal Alchemist - Roy Mustang - Pop Up Parade");
         assertThat(roy.fabricante()).isEqualTo("Good Smile Company");
-        assertThat(roy.imagenUrl()).isEqualTo("https://static.myfigurecollection.net/upload/items/1/1464692-48810.jpg");
+        assertThat(roy.imagenUrl()).isEqualTo("https://static.myfigurecollection.net/upload/items/2/1464692-48810.jpg");
         assertThat(roy.sugeridaId()).isNull();
         assertThat(vista.candidatos().get(1).titulo()).isEqualTo("Steins;Gate - Makise Kurisu - Aqua Float Girls");
     }
@@ -133,10 +133,12 @@ class ImportadorMfcTest {
                 List.of());
 
         ResultadoImportacion resultado = importador.aplicar(EstadoFigura.ME_GUSTA, List.of(
-                new Decision("2007474", "Kurisu Racing", "Solarain", "https://img/racing.jpg", "4595316221721",
+                new Decision("2007474", "Kurisu Racing", "Solarain", "https://img/racing.jpg",
+                        List.of("https://img/racing.jpg", "https://img/racing-2.jpg"), "4595316221721",
                         ficha, Accion.FUSIONAR, 1L),
-                new Decision("2477095", "Frieren", "Taito", "https://img/frieren.jpg", null, null, Accion.CREAR, null),
-                new Decision("1", "Omitida", null, null, null, null, Accion.OMITIR, null)));
+                new Decision("2477095", "Frieren", "Taito", "https://img/frieren.jpg", null, null, null,
+                        Accion.CREAR, null),
+                new Decision("1", "Omitida", null, null, null, null, null, Accion.OMITIR, null)));
 
         assertThat(resultado.figurasCreadas()).isEqualTo(1);
         assertThat(resultado.figurasOmitidas()).isEqualTo(1);
@@ -145,6 +147,7 @@ class ImportadorMfcTest {
         assertThat(racing.getFabricante()).isEqualTo("Solarain");
         assertThat(racing.getNotas()).isEqualTo("La favorita.");
         assertThat(racing.getMfcId()).isEqualTo("2007474");
+        assertThat(racing.getImagenes()).containsExactly("https://img/racing.jpg", "https://img/racing-2.jpg");
         assertThat(racing.getJan()).isEqualTo("4595316221721");
         assertThat(racing.datosFicha().alturaMm()).isEqualTo(243);
         assertThat(racing.datosFicha().participantes()).hasSize(1);

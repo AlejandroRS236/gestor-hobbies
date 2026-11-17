@@ -157,3 +157,18 @@ button.enlace { background: none; border: none; color: var(--texto-suave); text-
   display: grid; gap: 8px; margin-bottom: 8px;
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr) minmax(0, 0.8fr) minmax(0, 0.5fr) minmax(0, 1.2fr) auto;
 }
+
+.galeria-vista { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.galeria-vista img {
+  width: 100%; height: 420px; object-fit: contain; background: var(--fondo); border-radius: 10px;
+}
+.flecha { font-size: 22px; padding: 8px 12px; }
+.galeria-acciones { display: flex; gap: 8px; align-items: center; margin: 10px 0; }
+.galeria-acciones .espacio { flex: 1; }
+.galeria-miniaturas { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; }
+.galeria-miniaturas button {
+  flex: 0 0 auto; width: 64px; height: 64px; padding: 0; border: 2px solid transparent;
+  border-radius: 8px; overflow: hidden; background: var(--fondo); cursor: pointer;
+}
+.galeria-miniaturas button.activa { border-color: var(--texto); }
+.galeria-miniaturas img { width: 100%; height: 100%; object-fit: cover; }

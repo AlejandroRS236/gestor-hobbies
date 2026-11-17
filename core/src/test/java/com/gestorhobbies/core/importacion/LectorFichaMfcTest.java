@@ -30,7 +30,10 @@ class LectorFichaMfcTest {
         assertThat(leida.mfcId()).isEqualTo("2007474");
         assertThat(leida.titulo()).isEqualTo("Steins;Gate - Makise Kurisu - 1/7 - Racing Ver.");
         assertThat(leida.fabricante()).isEqualTo("Solarain");
-        assertThat(leida.imagenUrl()).isEqualTo("https://static.myfigurecollection.net/upload/items/1/2007474-3ad6e.jpg");
+        assertThat(leida.imagenUrl()).isEqualTo("https://static.myfigurecollection.net/upload/items/2/2007474-3ad6e.jpg");
+        assertThat(leida.imagenes()).hasSize(23)
+                .first().isEqualTo("https://static.myfigurecollection.net/upload/items/2/2007474-3ad6e.jpg");
+        assertThat(leida.imagenes()).allMatch(url -> url.startsWith("https://static.myfigurecollection.net/"));
         assertThat(leida.jan()).isEqualTo("4595316221721");
 
         DatosFicha ficha = leida.ficha();
@@ -64,6 +67,7 @@ class LectorFichaMfcTest {
         assertThat(shiro.mfcId()).isEqualTo("218050");
         assertThat(shiro.titulo()).isEqualTo("No Game No Life - Shiro - 1/7");
         assertThat(shiro.ficha().alturaMm()).isEqualTo(155);
+        assertThat(shiro.imagenes()).hasSize(14);
         assertThat(shiro.ficha().avisos()).contains("counterfeit");
         assertThat(shiro.ficha().participantes()).extracting(DatosParticipante::rol)
                 .contains("Manufacturer", "Sculptor", "Illustrator");

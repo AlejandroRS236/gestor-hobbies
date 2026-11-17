@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import type { DatosFicha, Enlace, EstadoEnlace, EstadoFigura, Figura, FiguraPeticion, Tienda } from '../tipos';
 import { estados, fichaVacia, textoEstado, textoEstadoEnlace } from '../tipos';
+import { PestanaImagenes } from './PestanaImagenes';
 import { PestanaInformacion } from './PestanaInformacion';
 import { aNumero, aTexto, formatearEuros, formatearFecha, numeroATexto, texto } from '../formato';
 
@@ -63,7 +64,8 @@ export function FormularioFigura(props: Props) {
   const [enlaces, setEnlaces] = useState<EnlaceForm[]>(figura?.enlaces.map(desdeEnlace) ?? []);
   const [ficha, setFicha] = useState<DatosFicha>(figura?.ficha ?? fichaVacia);
   const [mfcId, setMfcId] = useState(texto(figura?.mfcId));
-  const [pestana, setPestana] = useState<'gestion' | 'informacion'>('gestion');
+  const [imagenes, setImagenes] = useState<string[]>(figura?.imagenes ?? []);
+  const [pestana, setPestana] = useState<'gestion' | 'informacion' | 'imagenes'>('gestion');
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
 
@@ -134,6 +136,7 @@ export function FormularioFigura(props: Props) {
         titulo: titulo.trim(),
         estado,
         imagenUrl: aTexto(imagenUrl),
+        imagenes,
         nota: notaNumero,
         notas: aTexto(notas),
         fabricante: aTexto(fabricante),
@@ -185,7 +188,16 @@ export function FormularioFigura(props: Props) {
             className={pestana === 'informacion' ? 'activa' : ''} onClick={() => setPestana('informacion')}>
             Información
           </button>
+          <button type="button" role="tab" aria-selected={pestana === 'imagenes'}
+            className={pestana === 'imagenes' ? 'activa' : ''} onClick={() => setPestana('imagenes')}>
+            Imágenes{imagenes.length > 0 ? ` (${imagenes.length})` : ''}
+          </button>
         </div>
+
+        {pestana === 'imagenes' && (
+          <PestanaImagenes titulo={titulo} imagenes={imagenes} principal={imagenUrl}
+            onCambiarImagenes={setImagenes} onCambiarPrincipal={setImagenUrl} />
+        )}
 
         {pestana === 'informacion' && (
           <PestanaInformacion ficha={ficha} mfcId={mfcId} onCambiarFicha={setFicha} onCambiarMfcId={setMfcId} />
