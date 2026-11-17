@@ -1,5 +1,6 @@
 package com.gestorhobbies.api.importacion;
 
+import com.gestorhobbies.core.importacion.ExtractorImagenes;
 import com.gestorhobbies.core.importacion.ImportadorExcel;
 import com.gestorhobbies.core.importacion.ImportadorMfc;
 import com.gestorhobbies.core.importacion.ResultadoImportacion;
@@ -23,10 +24,24 @@ public class ImportacionController {
 
     private final ImportadorExcel importador;
     private final ImportadorMfc importadorMfc;
+    private final ExtractorImagenes extractorImagenes;
 
-    public ImportacionController(ImportadorExcel importador, ImportadorMfc importadorMfc) {
+    public ImportacionController(ImportadorExcel importador, ImportadorMfc importadorMfc,
+                                 ExtractorImagenes extractorImagenes) {
         this.importador = importador;
         this.importadorMfc = importadorMfc;
+        this.extractorImagenes = extractorImagenes;
+    }
+
+    /** Fotos de producto de la página de una tienda guardada como HTML. No guarda nada. */
+    @PostMapping("/imagenes")
+    public List<String> extraerImagenes(@RequestParam("archivo") MultipartFile archivo) throws IOException {
+        if (archivo.isEmpty()) {
+            throw new IllegalArgumentException("El archivo está vacío");
+        }
+        try (InputStream entrada = archivo.getInputStream()) {
+            return extractorImagenes.extraer(entrada);
+        }
     }
 
     @PostMapping("/excel")

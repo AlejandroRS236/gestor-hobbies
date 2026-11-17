@@ -71,3 +71,10 @@ export function aplicarMfc(estado: EstadoFigura, decisiones: DecisionMfc[]): Pro
     body: JSON.stringify({ estado, decisiones }),
   });
 }
+
+/** Fotos de producto de una página de tienda guardada (.html), para elegir cuáles añadir a la galería. */
+export function extraerImagenes(archivo: File): Promise<string[]> {
+  const datos = new FormData();
+  datos.append('archivo', archivo);
+  return pedir<string[]>('/api/importar/imagenes', { method: 'POST', body: datos });
+}
