@@ -212,10 +212,10 @@ export default function App() {
             <button className="volver" onClick={navegar('perfil-figuras')}>← Perfil de figuras</button>
           )}
           <h1>{vista === 'tiendas' ? 'Tiendas' : vista === 'figuras' ? 'Lista de figuras' : 'Figuras'}</h1>
-          <span className="espacio" />
           {vista === 'perfil-figuras' && (
-            <button className="secundario" onClick={navegar('tiendas')}>Tiendas</button>
+            <button className="secundario junto-titulo" onClick={navegar('tiendas')}>Tiendas</button>
           )}
+          <span className="espacio" />
           {vista !== 'tiendas' && (
             <button className="secundario" onClick={() => selectorExcel.current?.click()}>Importar</button>
           )}
