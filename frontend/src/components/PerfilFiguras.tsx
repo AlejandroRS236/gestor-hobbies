@@ -13,7 +13,7 @@ interface Props {
   onCambiarFondo: () => void;
 }
 
-const MAX_ESCAPARATE = 9;
+const MAX_ESCAPARATE = 10;
 
 function Portada({ figura, onAbrir }: { figura: Figura; onAbrir: () => void }) {
   const [rota, setRota] = useState(false);
