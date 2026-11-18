@@ -1,13 +1,34 @@
 {
   "name": "gestor-hobbies-desktop",
   "private": true,
-  "version": "0.1.0",
-  "description": "Ventana de escritorio del Gestor de hobbies",
+  "version": "1.0.0",
+  "description": "Gestor de hobbies: figuras, anime, lectura y videojuegos",
+  "author": "AlejandroRS236",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "empaquetar": "electron-builder --win"
   },
   "devDependencies": {
-    "electron": "^38.0.0"
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.gestorhobbies.app",
+    "productName": "Gestor de hobbies",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "pantallas/**", "build/icon.png"],
+    "extraResources": [
+      { "from": "recursos/jre", "to": "jre" },
+      { "from": "../api/target/gestor-hobbies-api.jar", "to": "backend/gestor-hobbies-api.jar" }
+    ],
+    "win": { "target": "nsis", "icon": "build/icon.ico" },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Gestor de hobbies",
+      "artifactName": "Gestor-de-hobbies-${version}-instalador.${ext}"
+    }
   }
 }

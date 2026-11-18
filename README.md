@@ -44,6 +44,18 @@ La lógica vive en `core` y no depende de la interfaz: la API y el frontend se p
    ```
    Abre http://localhost:5173.
 
+## Instalador de Windows
+
+```bash
+empaquetar
+```
+
+Compila la interfaz, la mete dentro del backend, prepara un Java propio con `jlink` y genera con
+electron-builder `desktop/dist/Gestor-de-hobbies-<versión>-instalador.exe`. La app instalada no necesita
+Java ni Node: Electron arranca el backend en un puerto libre de `127.0.0.1` y abre la ventana. La primera
+vez pide los datos de conexión a la base de datos y los guarda en la carpeta de datos del usuario
+(`%APPDATA%/Gestor de hobbies/.env`), nunca en el instalador.
+
 ## Pruebas
 
 ```bash
@@ -56,7 +68,7 @@ La integración continua (GitHub Actions) ejecuta ambas en cada push.
 ## Hoja de ruta
 
 - [x] Esqueleto del proyecto, modelo de figuras y API básica
-- [ ] Fase 1: figuras completas (formularios, imágenes, alternativas por tienda) y app de escritorio instalable
+- [x] Fase 1: figuras completas (formularios, imágenes, alternativas por tienda) y app de escritorio instalable
 - [ ] Fase 2: anime y lectura (importación desde MyAnimeList, imágenes de AniList y Open Library)
 - [ ] Fase 3: botones "Buscar" y "Comparar" con tiendas configurables
 - [ ] Fase 4: videojuegos, estadísticas y avisos de fechas límite

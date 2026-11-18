@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'">
+  <title>Configuración</title>
+  <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+  <form id="formulario">
+    <h1>Conectar con tu base de datos</h1>
+    <p class="suave">
+      Los datos de Supabase (botón Connect → Direct → Session pooler → JDBC). Se guardan solo en este equipo.
+    </p>
+    <label>Dirección (JDBC)
+      <input id="url" required placeholder="jdbc:postgresql://aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require">
+    </label>
+    <label>Usuario
+      <input id="usuario" required placeholder="postgres.xxxxxxxx">
+    </label>
+    <label>Contraseña
+      <input id="contrasena" type="password" autocomplete="off">
+    </label>
+    <p class="error" id="error" role="alert"></p>
+    <button type="submit">Guardar y abrir</button>
+  </form>
+  <script src="configuracion.js"></script>
+</body>
+</html>
