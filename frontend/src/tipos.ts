@@ -108,6 +108,8 @@ export interface Figura {
   ficha: DatosFicha;
   /** Desde cuándo está en su estado actual (ISO), según el historial. */
   estadoDesde: string | null;
+  /** Lo que costó cuando ya la tengo (puede ser aproximado). */
+  precioPagado: number | null;
 }
 
 export interface EnlacePeticion {
@@ -136,6 +138,7 @@ export interface FiguraPeticion {
   enlaces: EnlacePeticion[];
   mfcId: string | null;
   ficha: DatosFicha;
+  precioPagado: number | null;
 }
 
 export interface ResultadoImportacion {

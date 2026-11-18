@@ -185,31 +185,11 @@ export default function App() {
   return (
     <>
       <header className="barra-superior">
-        <button type="button" className="marca" onClick={navegar('inicio')}>Gestor de hobbies</button>
-        <nav aria-label="Secciones">
-          <button className={vista === 'inicio' ? 'activa' : ''} onClick={navegar('inicio')}>Inicio</button>
-          <button className={vista === 'perfil-figuras' || vista === 'figuras' ? 'activa' : ''}
-            onClick={navegar('perfil-figuras')}>Figuras</button>
-          <button className={vista === 'tiendas' ? 'activa' : ''} onClick={navegar('tiendas')}>Tiendas</button>
-        </nav>
-        <span className="espacio" />
-        {vista === 'figuras' && (
-          <button className="secundario" onClick={navegar('perfil-figuras')}>← Perfil de figuras</button>
-        )}
-        <button className="secundario" onClick={() => selectorExcel.current?.click()}>
-          Importar
+        <button type="button" className="marca" onClick={navegar('inicio')} title="Ir al inicio">
+          Gestor de hobbies
         </button>
-        <input ref={selectorExcel} type="file" accept=".xlsx,.html,.htm" multiple hidden onChange={alElegirArchivo} />
-        {vista === 'tiendas' ? (
-          <button className="principal" onClick={() => setEdicionTienda({ tienda: null })}>
-            + Añadir tienda
-          </button>
-        ) : (
-          <button className="principal" onClick={() => setEdicionFigura({ modo: 'nueva' })}>
-            + Añadir figura
-          </button>
-        )}
       </header>
+      <input ref={selectorExcel} type="file" accept=".xlsx,.html,.htm" multiple hidden onChange={alElegirArchivo} />
 
     <main className={vista === 'inicio' || vista === 'perfil-figuras' ? '' : 'app'}>
       {mensaje && (
@@ -222,6 +202,29 @@ export default function App() {
       {vista === 'inicio' && (
         <Inicio perfil={perfil} figuras={figuras} onAbrirFiguras={navegar('perfil-figuras')}
           onEditarPerfil={() => setEditandoPerfil(true)} />
+      )}
+
+      {vista !== 'inicio' && (
+        <div className="barra-acciones">
+          {vista === 'perfil-figuras' ? (
+            <button className="volver" onClick={navegar('inicio')}>← Inicio</button>
+          ) : (
+            <button className="volver" onClick={navegar('perfil-figuras')}>← Perfil de figuras</button>
+          )}
+          <h1>{vista === 'tiendas' ? 'Tiendas' : vista === 'figuras' ? 'Lista de figuras' : 'Figuras'}</h1>
+          <span className="espacio" />
+          {vista === 'perfil-figuras' && (
+            <button className="secundario" onClick={navegar('tiendas')}>Tiendas</button>
+          )}
+          {vista !== 'tiendas' && (
+            <button className="secundario" onClick={() => selectorExcel.current?.click()}>Importar</button>
+          )}
+          {vista === 'tiendas' ? (
+            <button className="principal" onClick={() => setEdicionTienda({ tienda: null })}>+ Añadir tienda</button>
+          ) : (
+            <button className="principal" onClick={() => setEdicionFigura({ modo: 'nueva' })}>+ Añadir figura</button>
+          )}
+        </div>
       )}
 
       {vista === 'perfil-figuras' && (

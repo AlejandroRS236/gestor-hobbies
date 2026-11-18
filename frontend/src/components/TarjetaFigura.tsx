@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Figura } from '../tipos';
 import { colorEstado, textoEstado } from '../tipos';
 import { diasHasta, formatearEuros, formatearNota } from '../formato';
+import { precioDe } from '../filtrado';
 
 interface Props {
   figura: Figura;
@@ -45,8 +46,8 @@ export function TarjetaFigura({ figura, onAbrir, hoy = new Date() }: Props) {
           {textoEstado[figura.estado]}
         </span>
         {plazo && <span className="sobre-imagen plazo">{plazo}</span>}
-        {figura.mejorTotal !== null && (
-          <span className="sobre-imagen precio">{formatearEuros(figura.mejorTotal)}</span>
+        {precioDe(figura) !== null && (
+          <span className="sobre-imagen precio">{formatearEuros(precioDe(figura)!)}</span>
         )}
       </div>
       <div className="tarjeta-cuerpo">

@@ -45,7 +45,7 @@ public final class FiguraDtos {
                                   EstadoFigura estado, String fabricante, String jan, String riesgo,
                                   List<EnlaceRespuesta> enlaces, Long mejorEnlaceId, BigDecimal mejorTotal,
                                   LocalDate pedirAntesDe, boolean avisoNoComprar, String mfcId, DatosFicha ficha,
-                                  Instant estadoDesde) {
+                                  Instant estadoDesde, BigDecimal precioPagado) {
 
         static FiguraRespuesta desde(Figura f) {
             Enlace mejor = f.enlaceMasBarato().orElse(null);
@@ -59,7 +59,8 @@ public final class FiguraDtos {
                     f.tieneTiendaNoComprar(),
                     f.getMfcId(),
                     f.datosFicha(),
-                    f.estadoDesde());
+                    f.estadoDesde(),
+                    f.getPrecioPagado());
         }
     }
 
@@ -97,7 +98,8 @@ public final class FiguraDtos {
                                  String riesgo,
                                  List<@Valid EnlacePeticion> enlaces,
                                  String mfcId,
-                                 DatosFicha ficha) {
+                                 DatosFicha ficha,
+                                 @PositiveOrZero BigDecimal precioPagado) {
 
         Figura crear(LongFunction<Tienda> tiendas) {
             Figura figura = new Figura(titulo, estado);
@@ -116,6 +118,7 @@ public final class FiguraDtos {
             figura.setJan(jan);
             figura.setRiesgo(riesgo);
             figura.setMfcId(mfcId);
+            figura.setPrecioPagado(precioPagado);
             if (ficha != null) {
                 figura.aplicarFicha(ficha);
             }

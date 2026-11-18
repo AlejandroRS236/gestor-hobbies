@@ -17,6 +17,7 @@ import jakarta.persistence.OrderBy;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -41,6 +42,10 @@ public class Figura extends Elemento {
     private String jan;
 
     private String riesgo;
+
+    /** Lo que costó (con envío) cuando ya la tengo; puede ser aproximado. */
+    @Column(name = "precio_pagado", precision = 10, scale = 2)
+    private BigDecimal precioPagado;
 
     /** Número de la figura en MyFigureCollection, si se ha importado de allí. */
     @Column(name = "mfc_id", length = 20)
@@ -168,6 +173,17 @@ public class Figura extends Elemento {
             throw new IllegalArgumentException("El código JAN debe tener 8 o 13 dígitos");
         }
         this.jan = jan == null || jan.isBlank() ? null : jan.strip();
+    }
+
+    public BigDecimal getPrecioPagado() {
+        return precioPagado;
+    }
+
+    public void setPrecioPagado(BigDecimal precioPagado) {
+        if (precioPagado != null && precioPagado.signum() < 0) {
+            throw new IllegalArgumentException("El precio pagado no puede ser negativo");
+        }
+        this.precioPagado = precioPagado;
     }
 
     public String getRiesgo() {

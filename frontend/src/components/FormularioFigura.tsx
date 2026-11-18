@@ -64,6 +64,7 @@ export function FormularioFigura(props: Props) {
   const [enlaces, setEnlaces] = useState<EnlaceForm[]>(figura?.enlaces.map(desdeEnlace) ?? []);
   const [ficha, setFicha] = useState<DatosFicha>(figura?.ficha ?? fichaVacia);
   const [mfcId, setMfcId] = useState(texto(figura?.mfcId));
+  const [precioPagado, setPrecioPagado] = useState(numeroATexto(figura?.precioPagado));
   const [imagenes, setImagenes] = useState<string[]>(figura?.imagenes ?? []);
   const [pestana, setPestana] = useState<'gestion' | 'informacion' | 'imagenes'>('gestion');
   const [error, setError] = useState<string | null>(null);
@@ -118,6 +119,12 @@ export function FormularioFigura(props: Props) {
       setError('Revisa los precios: deben ser números positivos.');
       return;
     }
+    const pagado = aNumero(precioPagado);
+    if (pagado !== null && (Number.isNaN(pagado) || pagado < 0)) {
+      setPestana('gestion');
+      setError('El precio pagado debe ser un número positivo.');
+      return;
+    }
     if (mfcId.trim() !== '' && !/^\d+$/.test(mfcId.trim())) {
       setPestana('informacion');
       setError('El número de MyFigureCollection solo lleva cifras.');
@@ -144,6 +151,7 @@ export function FormularioFigura(props: Props) {
         riesgo: aTexto(riesgo),
         mfcId: aTexto(mfcId),
         ficha,
+        precioPagado: aNumero(precioPagado),
         enlaces: enlaces.map((e) => ({
           tiendaId: Number(e.tiendaId),
           url: aTexto(e.url),
@@ -236,10 +244,14 @@ export function FormularioFigura(props: Props) {
             <input value={jan} onChange={(e) => setJan(e.target.value)} inputMode="numeric" />
           </label>
           <label>
+            Precio pagado (€)
+            <input value={precioPagado} onChange={(e) => setPrecioPagado(e.target.value)} inputMode="decimal"
+              placeholder="Si ya la tienes" />
+          </label>
+          <label>
             Nota (0-10)
             <input value={nota} onChange={(e) => setNota(e.target.value)} inputMode="decimal" placeholder="8,7" />
           </label>
-          <span />
           <label className="ancho">
             Notas
             <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} />

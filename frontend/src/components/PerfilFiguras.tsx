@@ -60,6 +60,7 @@ export function PerfilFiguras({ figuras, actualizaciones, perfil, onVerLista, on
   const conseguidas = figuras.filter((f) => f.estado === 'LA_TENGO').sort(masReciente).slice(0, MAX_ESCAPARATE);
   const reservadas = figuras.filter((f) => f.estado === 'RESERVADA').sort(masReciente).slice(0, MAX_ESCAPARATE);
   const totalReservadas = resumir(figuras.filter((f) => f.estado === 'RESERVADA')).total;
+  const estanteria = resumir(figuras.filter((f) => f.estado === 'LA_TENGO'));
   const total = figuras.length;
   const reparto = estados.map((e) => ({ estado: e, n: figuras.filter((f) => f.estado === e).length }));
   const conNota = figuras.filter((f) => f.nota !== null);
@@ -135,6 +136,10 @@ export function PerfilFiguras({ figuras, actualizaciones, perfil, onVerLista, on
               </ul>
               <dl className="totales">
                 <div><dt>Figuras en total</dt><dd>{total}</dd></div>
+                <div>
+                  <dt>Gastado en las que tengo{estanteria.sinPrecio > 0 ? ` (${estanteria.sinPrecio} sin precio)` : ''}</dt>
+                  <dd>{formatearEuros(estanteria.total)}</dd>
+                </div>
                 <div><dt>Pensando comprar</dt>
                   <dd>{formatearEuros(resumir(figuras.filter((f) => f.estado === 'PENSANDO_COMPRAR')).total)}</dd></div>
                 <div><dt>Reservadas</dt><dd>{formatearEuros(totalReservadas)}</dd></div>

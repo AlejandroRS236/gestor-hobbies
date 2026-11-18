@@ -1,5 +1,8 @@
 import type { EstadoFigura, Figura } from './tipos';
 
+/** El precio que cuenta: lo pagado si ya se apuntó, si no el mejor precio con envío. */
+export const precioDe = (f: Figura) => f.precioPagado ?? f.mejorTotal;
+
 export type Orden = 'nombre' | 'precio-asc' | 'precio-desc' | 'limite' | 'salida';
 export type Plazo = 'todos' | '7' | '30' | 'con-fecha';
 
@@ -76,8 +79,8 @@ export function aplicarFiltros(figuras: Figura[], f: Filtros, hoy = new Date()):
       const salida = salidaDe(fig);
       if (salida === null || Math.floor(salida / 100) !== Number(f.anioSalida)) return false;
     }
-    if (min !== null && !Number.isNaN(min) && (fig.mejorTotal === null || fig.mejorTotal < min)) return false;
-    if (max !== null && !Number.isNaN(max) && (fig.mejorTotal === null || fig.mejorTotal > max)) return false;
+    if (min !== null && !Number.isNaN(min) && (precioDe(fig) === null || precioDe(fig)! < min)) return false;
+    if (max !== null && !Number.isNaN(max) && (precioDe(fig) === null || precioDe(fig)! > max)) return false;
     if (f.plazo !== 'todos') {
       if (!fig.pedirAntesDe) return false;
       if (f.plazo !== 'con-fecha') {
@@ -92,8 +95,8 @@ export function aplicarFiltros(figuras: Figura[], f: Filtros, hoy = new Date()):
   const alFinal = (v: number | null, asc: boolean) => (v === null ? (asc ? Infinity : -Infinity) : v);
   const comparadores: Record<Orden, (a: Figura, b: Figura) => number> = {
     nombre: (a, b) => a.titulo.localeCompare(b.titulo),
-    'precio-asc': (a, b) => alFinal(a.mejorTotal, true) - alFinal(b.mejorTotal, true),
-    'precio-desc': (a, b) => alFinal(b.mejorTotal, false) - alFinal(a.mejorTotal, false),
+    'precio-asc': (a, b) => alFinal(precioDe(a), true) - alFinal(precioDe(b), true),
+    'precio-desc': (a, b) => alFinal(precioDe(b), false) - alFinal(precioDe(a), false),
     limite: (a, b) => (a.pedirAntesDe ?? '9999').localeCompare(b.pedirAntesDe ?? '9999'),
     salida: (a, b) => alFinal(salidaDe(a), true) - alFinal(salidaDe(b), true),
   };
@@ -113,12 +116,12 @@ export interface Resumen {
   sinPrecio: number;
 }
 
-/** Suma del mejor precio (con envío) de las figuras que lo tienen. */
+/** Suma del precio de cada figura (lo pagado o, si no, el mejor precio con envío). */
 export function resumir(figuras: Figura[]): Resumen {
   return figuras.reduce<Resumen>(
-    (r, f) => (f.mejorTotal === null
+    (r, f) => (precioDe(f) === null
       ? { ...r, cantidad: r.cantidad + 1, sinPrecio: r.sinPrecio + 1 }
-      : { ...r, cantidad: r.cantidad + 1, total: r.total + f.mejorTotal }),
+      : { ...r, cantidad: r.cantidad + 1, total: r.total + precioDe(f)! }),
     { cantidad: 0, total: 0, sinPrecio: 0 },
   );
 }

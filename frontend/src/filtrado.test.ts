@@ -10,7 +10,7 @@ const enlace = (tienda: string, total: number | null, extra: Partial<Enlace> = {
 const figura = (titulo: string, mejorTotal: number | null, extra: Partial<Figura> = {}): Figura => ({
   id: Math.random(), titulo, imagenUrl: null, imagenes: [], nota: null, notas: null, estado: 'PENSANDO_COMPRAR',
   fabricante: null, jan: null, riesgo: null, enlaces: [], mejorEnlaceId: null, mejorTotal, pedirAntesDe: null,
-  avisoNoComprar: false, mfcId: null, ficha: fichaVacia, estadoDesde: null, ...extra,
+  avisoNoComprar: false, mfcId: null, ficha: fichaVacia, estadoDesde: null, precioPagado: null, ...extra,
 });
 
 const coco = figura('Coco 1/6', 232.94, {
@@ -51,6 +51,11 @@ describe('filtrado', () => {
     expect(aplicarFiltros(todas, { ...filtrosVacios, orden: 'precio-asc' }, hoy)).toEqual([coco, lucy, shiro]);
     expect(aplicarFiltros(todas, { ...filtrosVacios, orden: 'precio-desc' }, hoy)).toEqual([lucy, coco, shiro]);
     expect(aplicarFiltros(todas, { ...filtrosVacios, orden: 'salida' }, hoy)).toEqual([lucy, coco, shiro]);
+  });
+
+  it('si ya se apuntó lo pagado, cuenta eso en vez del mejor precio', () => {
+    const tengo = figura('Roy Mustang', null, { estado: 'LA_TENGO', precioPagado: 35 });
+    expect(resumir([tengo, coco]).total).toBeCloseTo(267.94);
   });
 
   it('suma el total y cuenta las que no tienen precio', () => {

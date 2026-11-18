@@ -6,7 +6,7 @@ import { fichaVacia } from '../tipos';
 const figura = (id: number, titulo: string, extra: Partial<Figura> = {}): Figura => ({
   id, titulo, imagenUrl: null, imagenes: [], nota: null, notas: null, estado: 'ME_GUSTA', fabricante: null, jan: null,
   riesgo: null, enlaces: [], mejorEnlaceId: null, mejorTotal: null, pedirAntesDe: null, avisoNoComprar: false,
-  mfcId: null, ficha: fichaVacia, estadoDesde: null, ...extra,
+  mfcId: null, ficha: fichaVacia, estadoDesde: null, precioPagado: null, ...extra,
 });
 
 const figuras = [

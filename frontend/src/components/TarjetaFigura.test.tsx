@@ -28,6 +28,7 @@ const base: Figura = {
   mfcId: null,
   ficha: fichaVacia,
   estadoDesde: null,
+  precioPagado: null,
 };
 
 describe('TarjetaFigura', () => {
