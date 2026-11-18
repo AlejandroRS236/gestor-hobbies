@@ -3,6 +3,7 @@ package com.gestorhobbies.core.figuras;
 import com.gestorhobbies.core.comun.Elemento;
 import com.gestorhobbies.core.comun.Enlace;
 import com.gestorhobbies.core.tiendas.Confianza;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -11,9 +12,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -54,6 +59,10 @@ public class Figura extends Elemento {
     @OrderColumn(name = "orden")
     private List<Lanzamiento> lanzamientos = new ArrayList<>();
 
+    @OneToMany(mappedBy = "figura", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("fecha ASC, id ASC")
+    private List<CambioEstado> historial = new ArrayList<>();
+
     protected Figura() {
         // JPA
     }
@@ -64,7 +73,25 @@ public class Figura extends Elemento {
     }
 
     public void cambiarEstado(EstadoFigura nuevo) {
-        this.estado = Objects.requireNonNull(nuevo, "estado");
+        cambiarEstado(nuevo, Clock.systemUTC());
+    }
+
+    /** Cambia el estado y, si es distinto del actual, lo apunta en el historial. */
+    public void cambiarEstado(EstadoFigura nuevo, Clock reloj) {
+        Objects.requireNonNull(nuevo, "estado");
+        if (nuevo != estado) {
+            historial.add(new CambioEstado(this, estado, nuevo, Instant.now(reloj)));
+            this.estado = nuevo;
+        }
+    }
+
+    /** Desde cuándo está en su estado actual (null si no hay historial). */
+    public Instant estadoDesde() {
+        return historial.isEmpty() ? null : historial.get(historial.size() - 1).getFecha();
+    }
+
+    public List<CambioEstado> getHistorial() {
+        return java.util.Collections.unmodifiableList(historial);
     }
 
     /** La fecha límite más próxima entre las tiendas que siguen siendo opción. */

@@ -15,6 +15,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.function.LongFunction;
@@ -43,7 +44,8 @@ public final class FiguraDtos {
                                   BigDecimal nota, String notas,
                                   EstadoFigura estado, String fabricante, String jan, String riesgo,
                                   List<EnlaceRespuesta> enlaces, Long mejorEnlaceId, BigDecimal mejorTotal,
-                                  LocalDate pedirAntesDe, boolean avisoNoComprar, String mfcId, DatosFicha ficha) {
+                                  LocalDate pedirAntesDe, boolean avisoNoComprar, String mfcId, DatosFicha ficha,
+                                  Instant estadoDesde) {
 
         static FiguraRespuesta desde(Figura f) {
             Enlace mejor = f.enlaceMasBarato().orElse(null);
@@ -56,7 +58,8 @@ public final class FiguraDtos {
                     f.pedirAntesDe().orElse(null),
                     f.tieneTiendaNoComprar(),
                     f.getMfcId(),
-                    f.datosFicha());
+                    f.datosFicha(),
+                    f.estadoDesde());
         }
     }
 

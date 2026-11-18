@@ -16,6 +16,10 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: true
+    properties:
+      hibernate:
+        # Carga las colecciones de muchas figuras a la vez en lugar de una consulta por figura.
+        default_batch_fetch_size: 100
   flyway:
     enabled: true
 

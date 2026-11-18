@@ -119,6 +119,22 @@ class FiguraTest {
     }
 
     @Test
+    void cadaCambioDeEstadoQuedaEnElHistorial() {
+        java.time.Instant lunes = java.time.Instant.parse("2026-11-16T10:00:00Z");
+        java.time.Instant martes = java.time.Instant.parse("2026-11-17T18:30:00Z");
+        Figura figura = new Figura("Nami – Elevated Boost", EstadoFigura.PENSANDO_COMPRAR);
+        figura.cambiarEstado(EstadoFigura.RESERVADA, java.time.Clock.fixed(lunes, java.time.ZoneOffset.UTC));
+        figura.cambiarEstado(EstadoFigura.RESERVADA, java.time.Clock.fixed(martes, java.time.ZoneOffset.UTC));
+        figura.cambiarEstado(EstadoFigura.LA_TENGO, java.time.Clock.fixed(martes, java.time.ZoneOffset.UTC));
+
+        assertThat(figura.getHistorial()).extracting(CambioEstado::getNuevo)
+                .containsExactly(EstadoFigura.PENSANDO_COMPRAR, EstadoFigura.RESERVADA, EstadoFigura.LA_TENGO);
+        assertThat(figura.getHistorial().get(0).getAnterior()).isNull();
+        assertThat(figura.getHistorial().get(2).getAnterior()).isEqualTo(EstadoFigura.RESERVADA);
+        assertThat(figura.estadoDesde()).isEqualTo(martes);
+    }
+
+    @Test
     void elTituloNoPuedeEstarVacio() {
         assertThatThrownBy(() -> new Figura("  ", EstadoFigura.ME_GUSTA))
                 .isInstanceOf(IllegalArgumentException.class);
