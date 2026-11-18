@@ -1,5 +1,5 @@
 import type {
-  DecisionMfc, EstadoFigura, Figura, FiguraPeticion, PrevisualizacionMfc, ResultadoImportacion, Tienda,
+  Actualizacion, Perfil, DecisionMfc, EstadoFigura, Figura, FiguraPeticion, PrevisualizacionMfc, ResultadoImportacion, Tienda,
 } from './tipos';
 
 async function pedir<T>(ruta: string, opciones: RequestInit = {}): Promise<T> {
@@ -77,4 +77,16 @@ export function extraerImagenes(archivo: File): Promise<string[]> {
   const datos = new FormData();
   datos.append('archivo', archivo);
   return pedir<string[]>('/api/importar/imagenes', { method: 'POST', body: datos });
+}
+
+export function obtenerPerfil(): Promise<Perfil> {
+  return pedir<Perfil>('/api/perfil');
+}
+
+export function guardarPerfil(perfil: Perfil): Promise<Perfil> {
+  return pedir<Perfil>('/api/perfil', { method: 'PUT', body: JSON.stringify(perfil) });
+}
+
+export function ultimasActualizaciones(limite = 8): Promise<Actualizacion[]> {
+  return pedir<Actualizacion[]>(`/api/historial?limite=${limite}`);
 }

@@ -10,7 +10,7 @@ const enlace = (tienda: string, total: number | null, extra: Partial<Enlace> = {
 const figura = (titulo: string, mejorTotal: number | null, extra: Partial<Figura> = {}): Figura => ({
   id: Math.random(), titulo, imagenUrl: null, imagenes: [], nota: null, notas: null, estado: 'PENSANDO_COMPRAR',
   fabricante: null, jan: null, riesgo: null, enlaces: [], mejorEnlaceId: null, mejorTotal, pedirAntesDe: null,
-  avisoNoComprar: false, mfcId: null, ficha: fichaVacia, ...extra,
+  avisoNoComprar: false, mfcId: null, ficha: fichaVacia, estadoDesde: null, ...extra,
 });
 
 const coco = figura('Coco 1/6', 232.94, {

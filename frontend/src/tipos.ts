@@ -106,6 +106,8 @@ export interface Figura {
   avisoNoComprar: boolean;
   mfcId: string | null;
   ficha: DatosFicha;
+  /** Desde cuándo está en su estado actual (ISO), según el historial. */
+  estadoDesde: string | null;
 }
 
 export interface EnlacePeticion {
@@ -175,3 +177,21 @@ export interface DecisionMfc {
   accion: AccionMfc;
   figuraId: number | null;
 }
+
+export interface Perfil {
+  nombre: string | null;
+  avatarUrl: string | null;
+  fondoUrl: string | null;
+}
+
+export interface Actualizacion {
+  figuraId: number;
+  titulo: string;
+  imagenUrl: string | null;
+  anterior: EstadoFigura | null;
+  nuevo: EstadoFigura;
+  fecha: string;
+}
+
+/** Color de cada estado (definido en styles.css). */
+export const colorEstado = (estado: EstadoFigura) => `var(--estado-${estado.toLowerCase()})`;

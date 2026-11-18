@@ -2,8 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import {
   actualizarFigura, crearFigura, eliminarFigura, eliminarTienda, guardarTienda, importarExcel, aplicarMfc, previsualizarMfc,
-  listarFiguras, listarTiendas,
+  listarFiguras, listarTiendas, obtenerPerfil, guardarPerfil, ultimasActualizaciones,
 } from './api';
+import { FormularioPerfil } from './components/FormularioPerfil';
+import { Inicio } from './components/Inicio';
+import { PerfilFiguras } from './components/PerfilFiguras';
 import { FormularioFigura } from './components/FormularioFigura';
 import { FormularioTienda } from './components/FormularioTienda';
 import { ListaTiendas } from './components/ListaTiendas';
@@ -15,17 +18,20 @@ import type { Filtros } from './filtrado';
 import { formatearEuros } from './formato';
 import { TarjetaFigura } from './components/TarjetaFigura';
 import type {
-  EstadoFigura, Figura, FiguraPeticion, PrevisualizacionMfc, ResultadoImportacion, Tienda,
+  Actualizacion, EstadoFigura, Figura, FiguraPeticion, Perfil, PrevisualizacionMfc, ResultadoImportacion, Tienda,
 } from './tipos';
 import { estados, textoEstado } from './tipos';
 
-type Vista = 'figuras' | 'tiendas';
+type Vista = 'inicio' | 'perfil-figuras' | 'figuras' | 'tiendas';
 type Filtro = EstadoFigura | 'TODAS';
 type EdicionFigura = { modo: 'nueva' } | { modo: 'editar'; figura: Figura } | null;
 type EdicionTienda = { tienda: Tienda | null } | null;
 
 export default function App() {
-  const [vista, setVista] = useState<Vista>('figuras');
+  const [vista, setVista] = useState<Vista>('inicio');
+  const [perfil, setPerfil] = useState<Perfil>({ nombre: null, avatarUrl: null, fondoUrl: null });
+  const [editandoPerfil, setEditandoPerfil] = useState(false);
+  const [actualizaciones, setActualizaciones] = useState<Actualizacion[]>([]);
   const [estado, setEstado] = useState<Filtro>('TODAS');
   const [figuras, setFiguras] = useState<Figura[]>([]);
   const [tiendas, setTiendas] = useState<Tienda[]>([]);
@@ -39,7 +45,9 @@ export default function App() {
 
   const cargarFiguras = useCallback(async () => {
     try {
-      setFiguras(await listarFiguras());
+      const [lista, cambios] = await Promise.all([listarFiguras(), ultimasActualizaciones()]);
+      setFiguras(lista);
+      setActualizaciones(cambios);
       setError(null);
     } catch (e) {
       setError((e as Error).message);
@@ -61,6 +69,24 @@ export default function App() {
   useEffect(() => {
     void cargarTiendas();
   }, [cargarTiendas]);
+
+  useEffect(() => {
+    obtenerPerfil().then(setPerfil).catch(() => undefined);
+  }, []);
+
+  async function guardarDatosPerfil(datos: Perfil) {
+    setPerfil(await guardarPerfil(datos));
+    setEditandoPerfil(false);
+  }
+
+  function verLista(filtro: Filtro) {
+    setEstado(filtro);
+    setVista('figuras');
+  }
+
+  function abrirFigura(figura: Figura) {
+    setEdicionFigura({ modo: 'editar', figura });
+  }
 
   async function guardarFigura(datos: FiguraPeticion) {
     if (edicionFigura?.modo === 'editar') {
@@ -154,34 +180,38 @@ export default function App() {
   const visibles = aplicarFiltros(porEstado(figuras, estado), filtros);
   const resumen = resumir(visibles);
 
+  const navegar = (destino: Vista) => () => setVista(destino);
+
   return (
-    <main className="app">
-      <header className="cabecera">
-        <nav className="secciones">
-          <button className={vista === 'figuras' ? 'activa' : ''} onClick={() => setVista('figuras')}>
-            Figuras
-          </button>
-          <button className={vista === 'tiendas' ? 'activa' : ''} onClick={() => setVista('tiendas')}>
-            Tiendas
-          </button>
+    <>
+      <header className="barra-superior">
+        <button type="button" className="marca" onClick={navegar('inicio')}>Gestor de hobbies</button>
+        <nav aria-label="Secciones">
+          <button className={vista === 'inicio' ? 'activa' : ''} onClick={navegar('inicio')}>Inicio</button>
+          <button className={vista === 'perfil-figuras' || vista === 'figuras' ? 'activa' : ''}
+            onClick={navegar('perfil-figuras')}>Figuras</button>
+          <button className={vista === 'tiendas' ? 'activa' : ''} onClick={navegar('tiendas')}>Tiendas</button>
         </nav>
-        <div className="botones">
-          <button className="secundario" onClick={() => selectorExcel.current?.click()}>
-            Importar
+        <span className="espacio" />
+        {vista === 'figuras' && (
+          <button className="secundario" onClick={navegar('perfil-figuras')}>← Perfil de figuras</button>
+        )}
+        <button className="secundario" onClick={() => selectorExcel.current?.click()}>
+          Importar
+        </button>
+        <input ref={selectorExcel} type="file" accept=".xlsx,.html,.htm" multiple hidden onChange={alElegirArchivo} />
+        {vista === 'tiendas' ? (
+          <button className="principal" onClick={() => setEdicionTienda({ tienda: null })}>
+            + Añadir tienda
           </button>
-          <input ref={selectorExcel} type="file" accept=".xlsx,.html,.htm" multiple hidden onChange={alElegirArchivo} />
-          {vista === 'figuras' ? (
-            <button className="principal" onClick={() => setEdicionFigura({ modo: 'nueva' })}>
-              + Añadir figura
-            </button>
-          ) : (
-            <button className="principal" onClick={() => setEdicionTienda({ tienda: null })}>
-              + Añadir tienda
-            </button>
-          )}
-        </div>
+        ) : (
+          <button className="principal" onClick={() => setEdicionFigura({ modo: 'nueva' })}>
+            + Añadir figura
+          </button>
+        )}
       </header>
 
+    <main className={vista === 'inicio' || vista === 'perfil-figuras' ? '' : 'app'}>
       {mensaje && (
         <p className="mensaje" role="status">
           {mensaje} <button className="enlace" onClick={() => setMensaje(null)}>Cerrar</button>
@@ -189,7 +219,17 @@ export default function App() {
       )}
       {error && <p className="error">{error}</p>}
 
-      {vista === 'figuras' ? (
+      {vista === 'inicio' && (
+        <Inicio perfil={perfil} figuras={figuras} onAbrirFiguras={navegar('perfil-figuras')}
+          onEditarPerfil={() => setEditandoPerfil(true)} />
+      )}
+
+      {vista === 'perfil-figuras' && (
+        <PerfilFiguras figuras={figuras} actualizaciones={actualizaciones} perfil={perfil}
+          onVerLista={verLista} onAbrirFigura={abrirFigura} onCambiarFondo={() => setEditandoPerfil(true)} />
+      )}
+
+      {vista === 'figuras' && (
         <>
           <nav className="pestanas">
             {(['TODAS', ...estados] as Filtro[]).map((e) => (
@@ -222,8 +262,14 @@ export default function App() {
             ))}
           </section>
         </>
-      ) : (
+      )}
+
+      {vista === 'tiendas' && (
         <ListaTiendas tiendas={tiendas} onAbrir={(t) => setEdicionTienda({ tienda: t })} />
+      )}
+
+      {editandoPerfil && (
+        <FormularioPerfil perfil={perfil} onGuardar={guardarDatosPerfil} onCancelar={() => setEditandoPerfil(false)} />
       )}
 
       {edicionFigura && (
@@ -258,5 +304,6 @@ export default function App() {
         />
       )}
     </main>
+    </>
   );
 }

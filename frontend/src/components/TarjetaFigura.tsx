@@ -1,17 +1,23 @@
 import { useState } from 'react';
 import type { Figura } from '../tipos';
-import { textoEstado } from '../tipos';
-import { formatearEuros, formatearFecha, formatearNota } from '../formato';
+import { colorEstado, textoEstado } from '../tipos';
+import { diasHasta, formatearEuros, formatearNota } from '../formato';
 
 interface Props {
   figura: Figura;
   onAbrir?: () => void;
+  hoy?: Date;
 }
 
-export function TarjetaFigura({ figura, onAbrir }: Props) {
+/** Tarjeta de la lista: foto grande con el estado, el precio y el aviso de plazo encima. */
+export function TarjetaFigura({ figura, onAbrir, hoy = new Date() }: Props) {
   const mejorEnlace = figura.enlaces.find((e) => e.id === figura.mejorEnlaceId);
   const reservada = figura.enlaces.find((e) => e.estado === 'RESERVADA');
   const [imagenRota, setImagenRota] = useState(false);
+  const dias = figura.pedirAntesDe ? diasHasta(figura.pedirAntesDe, hoy) : null;
+  const plazo = dias === null || dias < 0 || dias > 30 ? null
+    : dias === 0 ? 'Último día' : dias === 1 ? 'Pedir mañana' : `Pedir en ${dias} días`;
+  const falsificaciones = figura.ficha?.avisos?.toLowerCase().includes('counterfeit');
 
   return (
     <article
@@ -34,22 +40,18 @@ export function TarjetaFigura({ figura, onAbrir }: Props) {
         ) : (
           <span aria-hidden="true">?</span>
         )}
+        <span className="sobre-imagen estado">
+          <span className="punto" style={{ background: colorEstado(figura.estado) }} />
+          {textoEstado[figura.estado]}
+        </span>
+        {plazo && <span className="sobre-imagen plazo">{plazo}</span>}
+        {figura.mejorTotal !== null && (
+          <span className="sobre-imagen precio">{formatearEuros(figura.mejorTotal)}</span>
+        )}
       </div>
       <div className="tarjeta-cuerpo">
-        <span className={`chip chip-${figura.estado.toLowerCase()}`}>{textoEstado[figura.estado]}</span>
         <h3>{figura.titulo}</h3>
-        {mejorEnlace && figura.mejorTotal !== null && (
-          <p className="fila">
-            <span>{mejorEnlace.tienda}</span>
-            <span>{formatearEuros(figura.mejorTotal)}</span>
-          </p>
-        )}
-        {figura.pedirAntesDe && (
-          <p className="fila">
-            <span>Pedir antes de</span>
-            <span>{formatearFecha(figura.pedirAntesDe)}</span>
-          </p>
-        )}
+        {mejorEnlace && <span className="sub">{mejorEnlace.tienda}</span>}
         {figura.nota !== null && (
           <p className="fila">
             <span>Nota</span>
@@ -58,9 +60,7 @@ export function TarjetaFigura({ figura, onAbrir }: Props) {
         )}
         {reservada && <p className="etiqueta-reserva">Reservada en {reservada.tienda}</p>}
         {figura.avisoNoComprar && <p className="aviso">Tiene una tienda marcada como "no comprar"</p>}
-        {figura.ficha?.avisos?.toLowerCase().includes('counterfeit') && (
-          <p className="aviso">Existen falsificaciones de esta figura</p>
-        )}
+        {falsificaciones && <p className="aviso">Existen falsificaciones de esta figura</p>}
         {figura.enlaces.length > 1 && <p className="alternativas">{figura.enlaces.length} tiendas</p>}
       </div>
     </article>

@@ -27,6 +27,7 @@ const base: Figura = {
   avisoNoComprar: false,
   mfcId: null,
   ficha: fichaVacia,
+  estadoDesde: null,
 };
 
 describe('TarjetaFigura', () => {
@@ -59,6 +60,12 @@ describe('TarjetaFigura', () => {
     fireEvent.error(imagen);
     expect(screen.queryByAltText('Guerrera escala 1/7')).not.toBeInTheDocument();
     expect(screen.getByText('?')).toBeInTheDocument();
+  });
+
+  it('avisa cuando la fecha límite está cerca y enseña el precio sobre la foto', () => {
+    render(<TarjetaFigura figura={base} hoy={new Date('2026-11-17T10:00:00')} />);
+    expect(screen.getByText('Pedir en 3 días')).toBeInTheDocument();
+    expect(screen.getByText(/155,00/)).toBeInTheDocument();
   });
 
   it('avisa si alguna tienda está marcada como no comprar', () => {
