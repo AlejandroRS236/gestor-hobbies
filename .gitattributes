@@ -1,0 +1,6 @@
+# Normaliza los saltos de línea para que Windows y Linux no marquen archivos como modificados.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.png binary
+*.jpg binary
+*.xlsx binary
